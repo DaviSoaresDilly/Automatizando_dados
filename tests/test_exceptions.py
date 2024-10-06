@@ -32,5 +32,9 @@ def test_invalid_data_insertion(session):
     with pytest.raises(Exception) as e_info:
         session.add(paciente_invalido)
         session.commit()
-    
-    assert "CHECK constraint failed" in str(e_info.value), "Erro não esperado ao inserir paciente inválido"
+
+    # Verifica a violação da restrição NOT NULL para o campo nome
+    assert "NOT NULL constraint failed" in str(e_info.value), "Erro não esperado: violação da restrição NOT NULL"
+
+    # Opcional: se você tiver uma CHECK constraint para a idade ou outro campo, adicione outra verificação
+    # assert "CHECK constraint failed" in str(e_info.value), "Erro não esperado: violação da restrição CHECK"

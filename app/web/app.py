@@ -3,7 +3,7 @@ from flask import Flask, render_template, request, redirect, url_for
 from flask_wtf.csrf import CSRFProtect
 from app.database import get_session
 from app.reports.generate_reports import generate_atendimentos_report, export_report_to_csv
-from app.database.update_data import update_atendimento_status, update_paciente_info
+from app.base_de_dados.update_data import update_atendimento_status, update_paciente_info
 from app.web.forms import UpdateAtendimentoForm  # Importar formulário para validação
 from flask_caching import Cache
 
