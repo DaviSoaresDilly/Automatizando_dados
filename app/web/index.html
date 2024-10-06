@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sistema de Relatórios e Atualizações</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Sistema de Relatórios e Atualizações</h1>
+        <ul>
+            <li><a href="{{ url_for('relatorios') }}">Ver Relatórios</a></li>
+            <li><a href="{{ url_for('atualizar_atendimento') }}">Atualizar Atendimento</a></li>
+            <li><a href="{{ url_for('atualizar_paciente') }}">Atualizar Paciente</a></li>
+        </ul>
+    </div>
+</body>
+</html>
