@@ -1,10 +1,8 @@
-# Framework para criar a API
+# Backend - Flask, API, ORM, Database
 Flask
 Flask-RESTful
-
-# ORM para interação com o banco de dados
-SQLAlchemy
 Flask-SQLAlchemy
+SQLAlchemy
 Alembic
 
 # Para manipulação de dados
@@ -14,20 +12,19 @@ Faker
 # Para visualização de dados
 Matplotlib
 
-# Para rodar testes
+# Testes
 pytest
 pytest-cov
 
-# Ferramenta de logs
+# Utilitários
+python-dotenv
 loguru
 
-# Lidar com variáveis de ambiente
-python-dotenv
-
-# CSRF protection e cache
+# CSRF protection, Cache, Form Handling
 Flask-WTF
 Flask-Caching
 
+# Outros utilitários
 coverage
 Mako
 wtforms

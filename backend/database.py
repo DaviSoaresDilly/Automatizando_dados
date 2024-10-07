@@ -2,7 +2,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from app.models import Atendimento
+from backend.models import Atendimento
 
 # Banco de dados SQLite local
 DATABASE_URL = "sqlite:///meu_banco.db"

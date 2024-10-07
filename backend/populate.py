@@ -1,5 +1,5 @@
 # app/populate.py
-from app.models import Doenca, Bairro, Paciente, Clinica, Medico, ProfissionalSaude
+from backend.models import Doenca, Bairro, Paciente, Clinica, Medico, ProfissionalSaude
 from faker import Faker
 import random
 

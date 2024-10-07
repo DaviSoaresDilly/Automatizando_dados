@@ -1,8 +1,8 @@
 # tests/test_update.py
 import pytest
-from app.database import get_session
-from app.base_de_dados.update_data import update_atendimento_status, update_paciente_info
-from app.models import Atendimento, Paciente
+from backend.database import get_session
+from backend.base_de_dados.update_data import update_atendimento_status, update_paciente_info
+from backend.models import Atendimento, Paciente
 
 @pytest.fixture
 def session():
