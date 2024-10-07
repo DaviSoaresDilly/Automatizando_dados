@@ -1,4 +1,3 @@
-<<<<<<< HEAD:B-E/app/web/atualizar_atendimento.html
 <!DOCTYPE html>
 <html>
 <head>
@@ -28,34 +27,3 @@
     </div>
 </body>
 </html>
-=======
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Atualizar Atendimento</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-</head>
-<body>
-    <div class="container">
-        <h1>Atualizar Atendimento</h1>
-        <form method="POST">
-            <div class="form-group">
-                <label for="atendimento_id">ID do Atendimento</label>
-                <input type="text" class="form-control" id="atendimento_id" name="atendimento_id" required>
-            </div>
-            <div class="form-group">
-                <label for="status">Status</label>
-                <select class="form-control" id="status" name="status">
-                    <option value="Concluído">Concluído</option>
-                    <option value="Em andamento">Em andamento</option>
-                    <option value="Cancelado">Cancelado</option>
-                    <option value="Aguardando">Aguardando</option>
-                </select>
-            </div>
-            <button type="submit" class="btn btn-primary">Atualizar</button>
-        </form>
-        <a href="{{ url_for('index') }}" class="btn btn-secondary">Voltar</a>
-    </div>
-</body>
-</html>
->>>>>>> parent of 01c8eb7 (Atualizar links de navegação nas páginas HTML):app/web/atualizar_atendimento.html
