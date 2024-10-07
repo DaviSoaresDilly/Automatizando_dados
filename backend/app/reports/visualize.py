@@ -18,7 +18,7 @@ def plot_grupo_risco_atendimentos(session):
     """
     Gera um gráfico de pizza com a proporção de atendimentos de pacientes em grupo de risco.
     """
-    from backend.models import Paciente, Atendimento
+    from app.models import Paciente, Atendimento
 
     atendimentos = session.query(Atendimento).all()
     total_grupo_risco = sum(1 for a in atendimentos if a.paciente.idade >= 60 or 'Gestante' in a.paciente.sexo)

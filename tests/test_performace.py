@@ -2,8 +2,8 @@
 import pytest
 import time
 import psutil
-from app.database import get_session
-from app.generate_atendimentos import generate_atendimentos
+from backend.app.database import get_session
+from backend.app.generate_atendimentos import generate_atendimentos
 
 @pytest.fixture
 def session():

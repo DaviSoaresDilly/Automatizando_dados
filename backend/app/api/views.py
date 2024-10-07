@@ -1,7 +1,7 @@
 # app/api/views.py
 from flask import jsonify
-from backend.database import get_session
-from backend.models import Atendimento
+from app.database import get_session
+from app.models import Atendimento
 
 def atendimentos_report():
     session = get_session()

@@ -1,5 +1,5 @@
 import logging
-from app.models import Atendimento, Prontuario, Paciente, Bairro, Doenca, Clinica, Medico, AtendimentoProfissional, ProfissionalSaude
+from .models import Atendimento, Prontuario, Paciente, Bairro, Doenca, Clinica, Medico, AtendimentoProfissional, ProfissionalSaude
 from faker import Faker
 from datetime import datetime, timedelta
 import random
