@@ -1,8 +1,8 @@
 # main.py
-from .app.database import get_session
-from .app.models import Base
-from .app.populate import populate_data
-from .app.generate_atendimentos import generate_atendimentos
+from app.database import get_session
+from app.models import Base
+from app.populate import populate_data
+from app.generate_atendimentos import generate_atendimentos
 
 def main():
     session = get_session()
