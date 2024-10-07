@@ -1,8 +1,8 @@
 # main.py
-from backend.app.database import get_session
-from .models import Base
-from .populate import populate_data
-from .generate_atendimentos import generate_atendimentos
+from .app.database import get_session
+from .app.models import Base
+from .app.populate import populate_data
+from .app.generate_atendimentos import generate_atendimentos
 
 def main():
     session = get_session()
@@ -16,5 +16,5 @@ def main():
     # Geração de atendimentos
     generate_atendimentos(session, 100)
 
-if __name__ == "__app__":
+if __name__ == "__main__":
     main()

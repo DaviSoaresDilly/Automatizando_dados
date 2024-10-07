@@ -1,6 +1,6 @@
 # app/database/update_data.py
 from sqlalchemy.orm import Session
-from backend.app.models import Atendimento, Paciente
+from ..models import Atendimento, Paciente
 
 def update_atendimento_status(session: Session, atendimento_id: int, new_status: str):
     """

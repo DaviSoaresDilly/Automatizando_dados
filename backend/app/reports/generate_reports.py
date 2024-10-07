@@ -1,7 +1,7 @@
 # app/reports/generate_reports.py
 import pandas as pd
 from sqlalchemy.orm import Session
-from backend.app.models import Atendimento, Clinica
+from ..models import Atendimento, Clinica
 
 def generate_atendimentos_report(session: Session) -> pd.DataFrame:
     """
