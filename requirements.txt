@@ -1,6 +1,7 @@
 # Backend - Flask, API, ORM, Database
 Flask
 Flask-RESTful
+Flask-Cors
 Flask-SQLAlchemy
 SQLAlchemy
 Alembic

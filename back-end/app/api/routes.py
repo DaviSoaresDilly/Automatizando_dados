@@ -1,10 +1,11 @@
-# app/api/routes.py
-from flask import Flask
-from .views import atendimentos_report
+# backend/app/api/routes.py
 
-app = Flask(__name__)
+from flask import Blueprint, jsonify
 
-# Define rota para obter os atendimentos em formato JSON
-@app.route('/api/atendimentos', methods=['GET'])
-def get_atendimentos():
-    return atendimentos_report()
+# Blueprint para organizar as rotas da API
+api_blueprint = Blueprint('api', __name__)
+
+# Exemplo de rota para teste
+@api_blueprint.route('/status', methods=['GET'])
+def status():
+    return jsonify({"status": "API funcionando corretamente"})
