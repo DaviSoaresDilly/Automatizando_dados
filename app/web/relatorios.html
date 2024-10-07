@@ -1,0 +1,33 @@
+<<<<<<< HEAD:B-E/app/web/relatorios.html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Relatórios de Atendimentos</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Relatório de Atendimentos</h1>
+        {{ table|safe }}
+        <a href="./index.html" class="btn btn-primary">Voltar</a>
+        <a href="{{ filename }}" download class="btn btn-success">Baixar CSV</a>
+    </div>
+</body>
+</html>
+=======
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Relatórios de Atendimentos</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Relatório de Atendimentos</h1>
+        {{ table|safe }}
+        <a href="{{ url_for('index') }}" class="btn btn-primary">Voltar</a>
+        <a href="{{ filename }}" download class="btn btn-success">Baixar CSV</a>
+    </div>
+</body>
+</html>
+>>>>>>> parent of 01c8eb7 (Atualizar links de navegação nas páginas HTML):app/web/relatorios.html
