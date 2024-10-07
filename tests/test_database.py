@@ -1,9 +1,9 @@
 # tests/test_database.py
 import pytest
-from backend.database import get_session
-from backend.populate import populate_data
-from backend.generate_atendimentos import generate_atendimentos
-from backend.models import Atendimento, Prontuario, Paciente, Clinica
+from app.database import get_session
+from app.populate import populate_data
+from app.generate_atendimentos import generate_atendimentos
+from app.models import Atendimento, Prontuario, Paciente, Clinica
 
 @pytest.fixture
 def session():
