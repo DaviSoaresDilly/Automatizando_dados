@@ -3,7 +3,6 @@ from .models import Atendimento, Prontuario, Paciente, Bairro, Doenca, Clinica, 
 from faker import Faker
 from datetime import datetime, timedelta
 import random
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import IntegrityError
 
 fake = Faker('pt_BR')
@@ -86,13 +85,14 @@ def generate_atendimentos(session, qtd_atendimentos):
             hora_conclusao = (datetime.combine(datetime.today(), hora_atendimento) + timedelta(minutes=random.randint(15, 60))).time()
 
         # Cria atendimento
+        status = validar_ano_atendimento(data_atendimento)
         atendimento = Atendimento(
             id_paciente=paciente.id,
             id_bairro=bairro.id,
             id_doenca=doenca.id,
             id_clinica=clinica.id,
             data_atendimento=data_atendimento.date(),
-            status=random.choice(['Concluído', 'Em andamento', 'Cancelado', 'Aguardando']),
+            status=status,
             hora_atendimento=hora_atendimento,
             hora_conclusao=hora_conclusao
         )
@@ -145,4 +145,13 @@ def verificar_encaminhamento(doenca, clinica, grupo_risco):
         return 'Encaminhado para hospital'
     if grupo_risco and doenca.gravidade in ['Grave', 'Muito Grave']:
         return 'Encaminhado para hospital'
+    return 'Concluído'
+
+def validar_ano_atendimento(data_atendimento):
+    """Valida o status do atendimento com base no ano."""
+    ano = data_atendimento.year
+    if ano in [2022, 2023]:
+        return 'Concluído'
+    elif ano == 2024:
+        return random.choice(['Concluído', 'Em andamento', 'Cancelado', 'Aguardando'])
     return 'Concluído'
