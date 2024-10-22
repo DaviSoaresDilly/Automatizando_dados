@@ -1,7 +1,7 @@
 # tests/test_database.py
 import pytest
-from app.database import get_session
-from app.populate import populate_data
+from backend.app.database import get_session
+from backend.app.populate import populate_data
 from backend.app.generate_atendimentos import generate_atendimentos
 from backend.app.models import Atendimento, Prontuario, Paciente, Clinica
 
