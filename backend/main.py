@@ -14,7 +14,7 @@ def main():
     populate_data(session)
 
     # Geração de atendimentos
-    generate_atendimentos(session, 100)
+    generate_atendimentos(session, 52346)
 
 if __name__ == "__main__":
     main()
