@@ -1,10 +1,13 @@
 # main.py
-
+import logging
 from sqlalchemy import Engine
 from app.database import get_session, create_app
 from app.models import Base
 from app.populate import populate_data
 from app.generate_atendimentos import generate_atendimentos
+
+# Configuração básica do logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def reset_database(engine: Engine):
     """Função para dropar e recriar todas as tabelas"""
@@ -32,6 +35,9 @@ def main():
 
         # Geração de atendimentos (simulação com ID)
         generate_atendimentos(session, 100)
+
+        # Fechar a sessão do banco de dados
+        session.close()
 
 if __name__ == "__main__":
     main()
