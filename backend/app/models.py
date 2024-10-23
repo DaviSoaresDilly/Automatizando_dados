@@ -1,4 +1,3 @@
-# app/models.py
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Date, Time
 from sqlalchemy.orm import relationship, declarative_base
 
@@ -123,3 +122,17 @@ class AtendimentoProfissional(Base):
     # Relacionamentos
     atendimento = relationship('Atendimento', back_populates='profissionais')
     profissional = relationship('ProfissionalSaude', back_populates='atendimentos')
+
+class AtendimentoPulado(Base):
+    __tablename__ = 'atendimentos_pulados'
+    id = Column(Integer, primary_key=True)
+    id_paciente = Column(Integer, ForeignKey('pacientes.id'), nullable=False)
+    id_bairro = Column(Integer, ForeignKey('bairros.id'), nullable=False)
+    id_doenca = Column(Integer, ForeignKey('doencas.id'), nullable=False)
+    motivo = Column(String, nullable=False)  # Motivo para pular atendimento (Ex: "Falta de médico", "Capacidade excedida")
+    data_tentativa = Column(Date, nullable=False)
+
+    # Relacionamentos
+    paciente = relationship('Paciente')
+    bairro = relationship('Bairro')
+    doenca = relationship('Doenca')

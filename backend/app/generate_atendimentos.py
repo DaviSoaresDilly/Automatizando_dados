@@ -12,14 +12,6 @@ def str_to_time(time_str):
     """Converte uma string de hora ('HH:MM:SS') para um objeto time."""
     return datetime.strptime(time_str, '%H:%M:%S').time()
 
-def is_grupo_de_risco(paciente):
-    """Verifica se o paciente pertence a um grupo de risco (idosos >= 60, gestantes)."""
-    return paciente.idade >= 60 or 'Gestante' in paciente.sexo
-
-def calcular_frequencia_grupo_risco(paciente):
-    """Ajusta a frequência de atendimentos para grupos de risco."""
-    return random.random() < 0.45 if is_grupo_de_risco(paciente) else True
-
 def selecionar_enfermeiro_ou_tecnico(profissionais):
     """Seleciona enfermeiro ou técnico de enfermagem para o atendimento."""
     enfermeiros_tecnicos = [p for p in profissionais if p.tipo in ['Enfermeiro', 'Técnico de Enfermagem']]
@@ -36,13 +28,13 @@ def verificar_e_adicionar_atendimento_profissional(session, atendimento, profiss
         session.add(atendimento_profissional)
         session.flush()  # Verifica a integridade
     except IntegrityError:
-        session.rollback()  # Evita a duplicação por causa da constraint UNIQUE
+        session.rollback()  # Evita duplicações
 
 # Função principal
 def generate_atendimentos(session, qtd_atendimentos):
-    """Gera e insere atendimentos fictícios de 2022 a 2024 com grupos de risco priorizados."""
-    
-    # Pré-carregar todos os dados necessários em uma única consulta
+    """Gera e insere atendimentos fictícios de 2022 a 2024."""
+
+    # Pré-carregar todos os dados necessários em uma única consulta para otimização
     profissionais = session.query(ProfissionalSaude).all()
     pacientes = session.query(Paciente).all()
     doencas = session.query(Doenca).all()
@@ -60,31 +52,25 @@ def generate_atendimentos(session, qtd_atendimentos):
     dias_entre = (datetime(2024, 12, 31) - data_inicio).days
 
     atendimentos = []
+    prontuarios = []
     
     for _ in range(qtd_atendimentos):
         data_atendimento = data_inicio + timedelta(days=random.randint(0, dias_entre))
-
+        
+        # Seleção aleatória de pacientes, bairros, doenças e clínicas
         paciente = random.choice(pacientes)
-        if not calcular_frequencia_grupo_risco(paciente):
-            continue
-
         bairro, doenca = random.choice(bairros), random.choice(doencas)
-        grupo_risco = is_grupo_de_risco(paciente)
-        clinica = escolher_clinica(doenca, grupo_risco, clinicas_publicas, clinicas_privadas)
-        if not clinica:
-            continue
-
+        clinica = escolher_clinica(doenca, clinicas_publicas, clinicas_privadas)
         medico = selecionar_medico(paciente, doenca, medicos)
-        if not medico:
-            continue
+
+        if not clinica or not medico:
+            continue  # Caso não encontre clínica ou médico, pula este atendimento
 
         # Hora de atendimento e conclusão
         hora_atendimento = str_to_time(fake.time())
-        hora_conclusao = str_to_time(fake.time())
-        if hora_conclusao <= hora_atendimento:
-            hora_conclusao = (datetime.combine(datetime.today(), hora_atendimento) + timedelta(minutes=random.randint(15, 60))).time()
+        hora_conclusao = (datetime.combine(datetime.today(), hora_atendimento) + timedelta(minutes=random.randint(15, 60))).time()
 
-        # Cria atendimento
+        # Criando o atendimento
         status = validar_ano_atendimento(data_atendimento)
         atendimento = Atendimento(
             id_paciente=paciente.id,
@@ -98,24 +84,24 @@ def generate_atendimentos(session, qtd_atendimentos):
         )
         atendimentos.append(atendimento)
         session.add(atendimento)
-        session.flush()
+        session.flush()  # Salva para obter o ID do atendimento
 
-        # Criar prontuário vinculado ao atendimento gerado
+        # Criando prontuário vinculado ao atendimento gerado
         prontuario = Prontuario(
             id_paciente=paciente.id,
-            id_atendimento=atendimento.id,  # Vincular corretamente ao atendimento
+            id_atendimento=atendimento.id,  # Vincula ao atendimento criado
             id_medico=medico.id,
             descricao=fake.text(),
             data=data_atendimento.date(),
             hora=hora_atendimento,
-            status_conclusao=verificar_encaminhamento(doenca, clinica, grupo_risco)
+            status_conclusao=verificar_encaminhamento(doenca, clinica)
         )
+        prontuarios.append(prontuario)
         session.add(prontuario)
 
-        # Adicionar médico ao atendimento
+        # Adicionando profissionais (médico e enfermeiro/técnico) ao atendimento
         verificar_e_adicionar_atendimento_profissional(session, atendimento, medico, 'Consulta Médica')
 
-        # Adicionar enfermeiro/técnico ao atendimento
         enfermeiro_ou_tecnico = selecionar_enfermeiro_ou_tecnico(profissionais)
         if enfermeiro_ou_tecnico:
             verificar_e_adicionar_atendimento_profissional(session, atendimento, enfermeiro_ou_tecnico, 'Acompanhamento de Enfermagem')
@@ -123,9 +109,9 @@ def generate_atendimentos(session, qtd_atendimentos):
     # Commit de todos os atendimentos e prontuários
     session.commit()
 
-def escolher_clinica(doenca, grupo_risco, clinicas_publicas, clinicas_privadas):
-    """Escolhe a clínica adequada com base na gravidade e grupo de risco."""
-    if doenca.gravidade in ['Muito Grave', 'Grave'] or grupo_risco:
+def escolher_clinica(doenca, clinicas_publicas, clinicas_privadas):
+    """Escolhe a clínica adequada com base na gravidade da doença."""
+    if doenca.gravidade in ['Muito Grave', 'Grave']:
         return next((c for c in clinicas_publicas if 'UPA' in c.nome), None) or random.choice(clinicas_publicas)
     elif doenca.gravidade == 'Moderada':
         return next((c for c in clinicas_publicas if 'Centro de Saúde' in c.nome), None) or random.choice(clinicas_privadas)
@@ -139,11 +125,9 @@ def selecionar_medico(paciente, doenca, medicos):
         return next((m for m in medicos if m.especialidade == doenca.especialista), None) or random.choice(medicos)
     return next((m for m in medicos if m.especialidade == 'Clínico Geral'), None) or random.choice(medicos)
 
-def verificar_encaminhamento(doenca, clinica, grupo_risco):
+def verificar_encaminhamento(doenca, clinica):
     """Verifica a necessidade de encaminhamento de emergência."""
     if doenca.requer_cirurgia and 'UPA' in clinica.nome:
-        return 'Encaminhado para hospital'
-    if grupo_risco and doenca.gravidade in ['Grave', 'Muito Grave']:
         return 'Encaminhado para hospital'
     return 'Concluído'
 

@@ -1,9 +1,17 @@
 # app/populate.py
-from .models import Doenca, Bairro, Paciente, Clinica, Medico, ProfissionalSaude
+import logging
+from .models import Base, Doenca, Bairro, Paciente, Clinica, Medico, ProfissionalSaude
 from faker import Faker
 import random
 
 fake = Faker('pt_BR')
+
+def reset_database(session):
+    """Função para limpar as tabelas e resetar o banco de dados antes de inserir novos dados."""
+    meta = Base.metadata  # Acessa o metadata do Base
+    for table in reversed(meta.sorted_tables):
+        session.execute(table.delete())
+    session.commit()
 
 # Listas reais de especialidades médicas e doenças com cirurgia
 especialidades_publico = ['Clínico Geral', 'Pediatria', 'Cardiologia', 'Ortopedia', 'Neurologia']
@@ -166,14 +174,27 @@ def populate_profissionais_saude(session):
 
 def populate_data(session):
     """Popula o banco de dados com dados fictícios e reais baseados nos requisitos."""
+    
+    # Limpar tabelas antes da inserção para evitar duplicidade em testes contínuos
+    reset_database(session)
+
+    logging.info("Populando doenças...")
     populate_doencas(session)
+    
+    logging.info("Populando bairros...")
     populate_bairros(session)
     
     total_populacao = sum(bairro.pop_total for bairro in session.query(Bairro).all())
+    logging.info(f"Populando pacientes para {total_populacao} pessoas...")
     populate_pacientes(session, total_populacao)
     
+    logging.info("Populando clínicas...")
     populate_clinicas(session)
+    
+    logging.info("Populando médicos...")
     populate_medicos(session)
+    
+    logging.info("Populando profissionais de saúde...")
     populate_profissionais_saude(session)
     
-    print("População de dados concluída com sucesso!")
+    logging.info("População de dados concluída com sucesso!")

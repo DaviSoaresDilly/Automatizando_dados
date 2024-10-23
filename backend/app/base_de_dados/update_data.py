@@ -1,28 +1,37 @@
-# app/database/update_data.py
+# app/base_de_dados/update_data.py
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import SQLAlchemyError
 from ..models import Atendimento, Paciente
 
 def update_atendimento_status(session: Session, atendimento_id: int, new_status: str):
     """
     Atualiza o status de um atendimento.
     """
-    atendimento = session.query(Atendimento).filter_by(id=atendimento_id).first()
-    if atendimento:
-        atendimento.status = new_status
-        session.commit()
-        return True
-    return False
+    try:
+        atendimento = session.get(Atendimento, atendimento_id)  # Uso de get() para chave primária
+        if atendimento:
+            atendimento.status = new_status
+            session.commit()
+            return atendimento  # Retorna o objeto atualizado
+        return {"error": f"Atendimento com ID {atendimento_id} não encontrado."}
+    except SQLAlchemyError as e:
+        session.rollback()  # Reverte a transação em caso de erro
+        return {"error": str(e)}
 
 def update_paciente_info(session: Session, paciente_id: int, nome: str = None, idade: int = None):
     """
     Atualiza informações do paciente.
     """
-    paciente = session.query(Paciente).filter_by(id=paciente_id).first()
-    if paciente:
-        if nome:
-            paciente.nome = nome
-        if idade:
-            paciente.idade = idade
-        session.commit()
-        return True
-    return False
+    try:
+        paciente = session.get(Paciente, paciente_id)  # Uso de get() para chave primária
+        if paciente:
+            if nome:
+                paciente.nome = nome
+            if idade is not None:  # Verifica se idade não é None
+                paciente.idade = idade
+            session.commit()
+            return paciente  # Retorna o objeto atualizado
+        return {"error": f"Paciente com ID {paciente_id} não encontrado."}
+    except SQLAlchemyError as e:
+        session.rollback()  # Reverte a transação em caso de erro
+        return {"error": str(e)}
