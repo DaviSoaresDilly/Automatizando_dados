@@ -1,5 +1,5 @@
 import logging
-from .models import Atendimento, Prontuario, Paciente, Bairro, Doenca, Clinica, Medico, AtendimentoProfissional, ProfissionalSaude
+from .models import Atendimento, AtendimentoPulado, Prontuario, Paciente, Bairro, Doenca, Clinica, Medico, AtendimentoProfissional, ProfissionalSaude
 from faker import Faker
 from datetime import datetime, timedelta
 import random
@@ -32,9 +32,9 @@ def verificar_e_adicionar_atendimento_profissional(session, atendimento, profiss
 
 # Função principal
 def generate_atendimentos(session, qtd_atendimentos):
-    """Gera e insere atendimentos fictícios de 2022 a 2024."""
+    """Gera e insere atendimentos fictícios de 2022 a 2024 com grupos de risco priorizados."""
 
-    # Pré-carregar todos os dados necessários em uma única consulta para otimização
+    # Pré-carregar todos os dados necessários em uma única consulta
     profissionais = session.query(ProfissionalSaude).all()
     pacientes = session.query(Paciente).all()
     doencas = session.query(Doenca).all()
@@ -51,26 +51,33 @@ def generate_atendimentos(session, qtd_atendimentos):
     data_inicio = datetime(2022, 1, 1)
     dias_entre = (datetime(2024, 12, 31) - data_inicio).days
 
-    atendimentos = []
-    prontuarios = []
-    
+    atendimentos, atendimentos_pulados = [], []
+
     for _ in range(qtd_atendimentos):
         data_atendimento = data_inicio + timedelta(days=random.randint(0, dias_entre))
-        
-        # Seleção aleatória de pacientes, bairros, doenças e clínicas
+
         paciente = random.choice(pacientes)
+
         bairro, doenca = random.choice(bairros), random.choice(doencas)
         clinica = escolher_clinica(doenca, clinicas_publicas, clinicas_privadas)
-        medico = selecionar_medico(paciente, doenca, medicos)
+        if not clinica:
+            motivo = "Capacidade excedida"
+            registrar_atendimento_pulado(session, paciente, bairro, doenca, motivo, data_atendimento.date())
+            continue
 
-        if not clinica or not medico:
-            continue  # Caso não encontre clínica ou médico, pula este atendimento
+        medico = selecionar_medico(paciente, doenca, medicos)
+        if not medico:
+            motivo = "Falta de médico"
+            registrar_atendimento_pulado(session, paciente, bairro, doenca, motivo, data_atendimento.date())
+            continue
 
         # Hora de atendimento e conclusão
         hora_atendimento = str_to_time(fake.time())
-        hora_conclusao = (datetime.combine(datetime.today(), hora_atendimento) + timedelta(minutes=random.randint(15, 60))).time()
+        hora_conclusao = str_to_time(fake.time())
+        if hora_conclusao <= hora_atendimento:
+            hora_conclusao = (datetime.combine(datetime.today(), hora_atendimento) + timedelta(minutes=random.randint(15, 60))).time()
 
-        # Criando o atendimento
+        # Cria atendimento
         status = validar_ano_atendimento(data_atendimento)
         atendimento = Atendimento(
             id_paciente=paciente.id,
@@ -84,30 +91,43 @@ def generate_atendimentos(session, qtd_atendimentos):
         )
         atendimentos.append(atendimento)
         session.add(atendimento)
-        session.flush()  # Salva para obter o ID do atendimento
+        session.flush()
 
-        # Criando prontuário vinculado ao atendimento gerado
+        # Criar prontuário vinculado ao atendimento gerado
         prontuario = Prontuario(
             id_paciente=paciente.id,
-            id_atendimento=atendimento.id,  # Vincula ao atendimento criado
+            id_atendimento=atendimento.id,
             id_medico=medico.id,
             descricao=fake.text(),
             data=data_atendimento.date(),
             hora=hora_atendimento,
             status_conclusao=verificar_encaminhamento(doenca, clinica)
         )
-        prontuarios.append(prontuario)
         session.add(prontuario)
 
-        # Adicionando profissionais (médico e enfermeiro/técnico) ao atendimento
+        # Adicionar médico ao atendimento
         verificar_e_adicionar_atendimento_profissional(session, atendimento, medico, 'Consulta Médica')
 
+        # Adicionar enfermeiro/técnico ao atendimento
         enfermeiro_ou_tecnico = selecionar_enfermeiro_ou_tecnico(profissionais)
         if enfermeiro_ou_tecnico:
             verificar_e_adicionar_atendimento_profissional(session, atendimento, enfermeiro_ou_tecnico, 'Acompanhamento de Enfermagem')
 
-    # Commit de todos os atendimentos e prontuários
+    # Commit de todos os atendimentos, prontuários e atendimentos pulados
     session.commit()
+
+def registrar_atendimento_pulado(session, paciente, bairro, doenca, motivo, data_tentativa):
+    """Registra um atendimento que foi pulado."""
+    atendimento_pulado = AtendimentoPulado(
+        id_paciente=paciente.id,
+        id_bairro=bairro.id,
+        id_doenca=doenca.id,
+        motivo=motivo,
+        data_tentativa=data_tentativa
+    )
+    session.add(atendimento_pulado)
+    session.flush()
+
 
 def escolher_clinica(doenca, clinicas_publicas, clinicas_privadas):
     """Escolhe a clínica adequada com base na gravidade da doença."""

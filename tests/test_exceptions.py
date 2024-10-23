@@ -1,11 +1,17 @@
 # tests/test_exceptions.py
 import pytest
 from sqlalchemy.exc import IntegrityError
-from backend.app.database import get_session
-from backend.app.models import Atendimento, Paciente
+from app.database import create_app, get_session
+from app.models import Atendimento, Paciente
+
+@pytest.fixture(scope='module')
+def app():
+    app = create_app()
+    with app.app_context():
+        yield app
 
 @pytest.fixture
-def session():
+def session(app):
     session = get_session()
     yield session
     session.close()

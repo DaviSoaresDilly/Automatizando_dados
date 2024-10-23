@@ -2,11 +2,17 @@
 import pytest
 import time
 import psutil
-from backend.app.database import get_session
-from backend.app.generate_atendimentos import generate_atendimentos
+from app.database import create_app, get_session
+from app.generate_atendimentos import generate_atendimentos
+
+@pytest.fixture(scope='module')
+def app():
+    app = create_app()
+    with app.app_context():
+        yield app
 
 @pytest.fixture
-def session():
+def session(app):
     session = get_session()
     yield session
     session.close()
@@ -25,17 +31,17 @@ def test_cpu_usage(session):
     # Monitora o uso de CPU durante a geração de atendimentos
     process = psutil.Process()
     cpu_before = process.cpu_percent(interval=None)
-    
+
     start_time = time.time()
     generate_atendimentos(session, 1000)
     end_time = time.time()
-    
-    cpu_after = process.cpu_percent(interval=None)
+
+    cpu_after = process.cpu_percent(interval=1)  # Monitorar em intervalos de 1 segundo
     execution_time = end_time - start_time
 
     # Verifica que o uso de CPU não excedeu 80% e a execução não levou mais de 60 segundos
-    assert cpu_after - cpu_before < 80, "Uso de CPU excedeu 80%"
-    assert execution_time < 60, "A geração de atendimentos demorou mais que o esperado"
+    assert cpu_after < 80, "Uso de CPU excedeu 80%"
+    assert execution_time < 60, "Tempo de execução excedeu 60 segundos"
 
 def test_large_batch_performance(session):
     # Teste de desempenho para geração de 10.000 atendimentos

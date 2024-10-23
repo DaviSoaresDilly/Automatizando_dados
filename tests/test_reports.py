@@ -1,11 +1,17 @@
 # tests/test_reports.py
 import pytest
-from backend.app.database import get_session
-from backend.app.reports.generate_reports import generate_atendimentos_report, export_report_to_csv, export_report_to_pdf
+from app.database import create_app, get_session
+from app.reports.generate_reports import generate_atendimentos_report, export_report_to_csv, export_report_to_pdf
 import os
 
+@pytest.fixture(scope='module')
+def app():
+    app = create_app()
+    with app.app_context():
+        yield app
+
 @pytest.fixture
-def session():
+def session(app):
     session = get_session()
     yield session
     session.close()

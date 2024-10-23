@@ -12,7 +12,7 @@ def update_atendimento_status(session: Session, atendimento_id: int, new_status:
         if atendimento:
             atendimento.status = new_status
             session.commit()
-            return atendimento  # Retorna o objeto atualizado
+            return True  # Retorna True após a atualização bem-sucedida
         return {"error": f"Atendimento com ID {atendimento_id} não encontrado."}
     except SQLAlchemyError as e:
         session.rollback()  # Reverte a transação em caso de erro
@@ -30,7 +30,7 @@ def update_paciente_info(session: Session, paciente_id: int, nome: str = None, i
             if idade is not None:  # Verifica se idade não é None
                 paciente.idade = idade
             session.commit()
-            return paciente  # Retorna o objeto atualizado
+            return True  # Retorna True após a atualização bem-sucedida
         return {"error": f"Paciente com ID {paciente_id} não encontrado."}
     except SQLAlchemyError as e:
         session.rollback()  # Reverte a transação em caso de erro

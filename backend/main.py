@@ -1,25 +1,37 @@
 # main.py
-from app.database import get_session
+
+from sqlalchemy import Engine
+from app.database import get_session, create_app
 from app.models import Base
-from app.populate import populate_data, reset_database
+from app.populate import populate_data
 from app.generate_atendimentos import generate_atendimentos
 
-def main():
-    session = get_session()
-
-    # Excluir tabelas antigas
+def reset_database(engine: Engine):
+    """Função para dropar e recriar todas as tabelas"""
     print("Excluindo todas as tabelas existentes...")
-    reset_database(session)
+    Base.metadata.drop_all(engine)  # Excluir todas as tabelas
 
-    # Criar novas tabelas
     print("Criando novas tabelas...")
-    Base.metadata.create_all(session.bind)
+    Base.metadata.create_all(engine)  # Criar todas as tabelas
 
-    # População dos dados
-    populate_data(session)
+def main():
+    app = create_app()  # Crie a aplicação Flask
+    with app.app_context():  # Ative o contexto da aplicação
+        session = get_session()
 
-    # Geração de atendimentos
-    generate_atendimentos(session, 100)
+        # Verifique se o engine está corretamente configurado
+        engine = session.get_bind()
+        if engine is None:
+            raise RuntimeError("Engine não configurado corretamente na sessão.")
+
+        # Resetar o banco de dados (drop + create)
+        reset_database(engine)
+
+        # População dos dados
+        populate_data(session)
+
+        # Geração de atendimentos (simulação com ID)
+        generate_atendimentos(session, 100)
 
 if __name__ == "__main__":
     main()

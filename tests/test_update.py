@@ -1,12 +1,22 @@
 # tests/test_update.py
 import pytest
-from backend.app.database import get_session
-from backend.app.base_de_dados.update_data import update_atendimento_status, update_paciente_info
-from backend.app.models import Atendimento, Paciente
+from app.database import create_app, get_session
+from app.base_de_dados.update_data import update_atendimento_status, update_paciente_info
+from app.models import Atendimento, Paciente
+
+@pytest.fixture(scope='module')
+def app():
+    app = create_app()
+    with app.app_context():
+        yield app
 
 @pytest.fixture
-def session():
+def session(app):
     session = get_session()
+    # Inicialize o banco de dados e popule os dados necessários
+    from app.models import Base
+    Base.metadata.create_all(session.get_bind())
+    # Popule os dados necessários para o teste
     yield session
     session.close()
 

@@ -1,6 +1,6 @@
 # app/database.py
 from flask_sqlalchemy import SQLAlchemy
-
+from flask import Flask
 from app.models import Atendimento
 
 # Inicializando SQLAlchemy
@@ -44,10 +44,11 @@ def update_atendimento(session, atendimento_id, novos_dados):
         session.rollback()  # Reverte a transação em caso de erro
         raise e  # Relevanta o erro para ser tratado mais acima
 
-# Exemplo de uso em uma rota do Flask:
-# @app.route('/update_atendimento/<int:atendimento_id>', methods=['POST'])
-# def update(atendimento_id):
-#     novos_dados = request.get_json()
-#     session = get_session()
-#     update_atendimento(session, atendimento_id, novos_dados)
-#     return jsonify({"status": "sucesso"})
+def create_app():
+    app = Flask(__name__)
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///your_database.db'
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+    init_db(app)  # Inicialize o banco de dados com a aplicação Flask
+
+    return app

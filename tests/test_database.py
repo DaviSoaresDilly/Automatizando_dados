@@ -1,12 +1,18 @@
 # tests/test_database.py
 import pytest
-from backend.app.database import get_session
-from backend.app.populate import populate_data
-from backend.app.generate_atendimentos import generate_atendimentos
-from backend.app.models import Atendimento, Prontuario, Paciente, Clinica
+from app.database import create_app, get_session
+from app.populate import populate_data
+from app.generate_atendimentos import generate_atendimentos
+from app.models import Atendimento, Prontuario, Paciente, Clinica
+
+@pytest.fixture(scope='module')
+def app():
+    app = create_app()
+    with app.app_context():
+        yield app
 
 @pytest.fixture
-def session():
+def session(app):
     session = get_session()
     yield session
     session.close()
