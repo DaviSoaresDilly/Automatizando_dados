@@ -91,6 +91,7 @@ class Prontuario(Base):
     id = Column(Integer, primary_key=True)
     id_paciente = Column(Integer, ForeignKey('pacientes.id'), nullable=False)
     id_medico = Column(Integer, ForeignKey('medicos.id'), nullable=False)
+    id_atendimento = Column(Integer, ForeignKey('atendimentos.id'), nullable=False)  # Relacionamento com Atendimento
     descricao = Column(String, nullable=False)
     data = Column(Date, nullable=False)
     hora = Column(Time, nullable=False)
@@ -99,6 +100,7 @@ class Prontuario(Base):
     # Relacionamentos
     paciente = relationship('Paciente', back_populates='prontuarios')
     medico = relationship('Medico', back_populates='prontuarios')
+    atendimento = relationship('Atendimento')  # Novo relacionamento com Atendimento
 
 
 class ProfissionalSaude(Base):

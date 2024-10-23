@@ -22,7 +22,7 @@ def main():
     populate_data(session)
 
     # Geração de atendimentos (simulação com ID)
-    generate_atendimentos(session, 52346)
+    generate_atendimentos(session, 50000)
 
 if __name__ == "__main__":
     main()

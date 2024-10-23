@@ -59,7 +59,7 @@ def generate_atendimentos(session, qtd_atendimentos):
     data_inicio = datetime(2022, 1, 1)
     dias_entre = (datetime(2024, 12, 31) - data_inicio).days
 
-    atendimentos, prontuarios = [], []
+    atendimentos = []
     
     for _ in range(qtd_atendimentos):
         data_atendimento = data_inicio + timedelta(days=random.randint(0, dias_entre))
@@ -100,16 +100,17 @@ def generate_atendimentos(session, qtd_atendimentos):
         session.add(atendimento)
         session.flush()
 
-        # Criar prontuário
+        # Criar prontuário vinculado ao atendimento gerado
         prontuario = Prontuario(
             id_paciente=paciente.id,
+            id_atendimento=atendimento.id,  # Vincular corretamente ao atendimento
             id_medico=medico.id,
             descricao=fake.text(),
             data=data_atendimento.date(),
             hora=hora_atendimento,
             status_conclusao=verificar_encaminhamento(doenca, clinica, grupo_risco)
         )
-        prontuarios.append(prontuario)
+        session.add(prontuario)
 
         # Adicionar médico ao atendimento
         verificar_e_adicionar_atendimento_profissional(session, atendimento, medico, 'Consulta Médica')
@@ -119,8 +120,7 @@ def generate_atendimentos(session, qtd_atendimentos):
         if enfermeiro_ou_tecnico:
             verificar_e_adicionar_atendimento_profissional(session, atendimento, enfermeiro_ou_tecnico, 'Acompanhamento de Enfermagem')
 
-    # Inserir prontuários e commit
-    session.add_all(prontuarios)
+    # Commit de todos os atendimentos e prontuários
     session.commit()
 
 def escolher_clinica(doenca, grupo_risco, clinicas_publicas, clinicas_privadas):
