@@ -1,163 +1,150 @@
+# app/generate_atendimentos.py
 import logging
-from .models import Atendimento, AtendimentoPulado, Prontuario, Paciente, Bairro, Doenca, Clinica, Medico, AtendimentoProfissional, ProfissionalSaude
-from faker import Faker
+from .models import Agendamento, Atendimento, AtendimentoPulado, Prontuario, Paciente, Bairro, Doenca, Clinica, Medico, AtendimentoProfissional, ProfissionalSaude
 from datetime import datetime, timedelta
+from faker import Faker
 import random
-from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 fake = Faker('pt_BR')
 
-# Helper functions
-def str_to_time(time_str):
-    """Converte uma string de hora ('HH:MM:SS') para um objeto time."""
-    return datetime.strptime(time_str, '%H:%M:%S').time()
+# Configuração de logging
+logging.basicConfig(level=logging.INFO)
 
-def selecionar_enfermeiro_ou_tecnico(profissionais):
-    """Seleciona enfermeiro ou técnico de enfermagem para o atendimento."""
-    enfermeiros_tecnicos = [p for p in profissionais if p.tipo in ['Enfermeiro', 'Técnico de Enfermagem']]
-    return random.choice(enfermeiros_tecnicos) if enfermeiros_tecnicos else None
+def calcular_taxa_mortalidade(populacao_bairro, taxa_mortalidade_bh, populacao_bh):
+    """
+    Calcula a taxa de mortalidade ajustada para o bairro com base na taxa de mortalidade de Belo Horizonte.
+    """
+    proporcao_populacional = populacao_bairro / populacao_bh
+    return taxa_mortalidade_bh * proporcao_populacional
 
-def verificar_e_adicionar_atendimento_profissional(session, atendimento, profissional, funcao):
-    """Verifica duplicidade e adiciona o profissional ao atendimento se não houver duplicata."""
-    try:
-        atendimento_profissional = AtendimentoProfissional(
-            id_atendimento=atendimento.id,
-            id_profissional=profissional.id,
-            funcao=funcao
-        )
-        session.add(atendimento_profissional)
-        session.flush()  # Verifica a integridade
-    except IntegrityError:
-        session.rollback()  # Evita duplicações
+# Taxa de mortalidade em BH (baseada nos anos de 2022 e 2023) e população total
+taxa_mortalidade_bh = 0.00753  # Média de 0.753% de mortalidade
+populacao_bh = 2_416_339  # População de Belo Horizonte
 
-# Função principal
+# Aplicando a taxa para cada bairro
+def aplicar_taxa_mortalidade_bairros(bairros):
+    taxa_mortalidade_bairros = {}
+    for bairro in bairros:
+        taxa_mortalidade = calcular_taxa_mortalidade(bairro.pop_total, taxa_mortalidade_bh, populacao_bh)
+        logging.info(f"Taxa de mortalidade ajustada para o bairro {bairro.nome}: {taxa_mortalidade:.6f}")
+        taxa_mortalidade_bairros[bairro.id] = taxa_mortalidade
+    return taxa_mortalidade_bairros
+    
+# Função para gerar agendamento
+def gerar_agendamento(session, paciente, clinica, doenca, motivo):
+    """Cria um agendamento para o paciente."""
+    data_agendada = datetime.now() + timedelta(days=random.randint(1, 30))  # Agendar para até 30 dias no futuro
+    agendamento = Agendamento(
+        id_paciente=paciente.id,
+        id_clinica=clinica.id if clinica else None,
+        id_doenca=doenca.id,
+        data_agendada=data_agendada,
+        motivo=motivo,
+    )
+    session.add(agendamento)
+
+# Função principal para geração de atendimentos
 def generate_atendimentos(session, qtd_atendimentos):
-    """Gera e insere atendimentos fictícios de 2022 a 2024 com grupos de risco priorizados."""
     logging.info(f"Iniciando a geração de {qtd_atendimentos} atendimentos.")
-    atendimentos = []
-    atendimentos_pulados = []
 
-    # Carregar todos os dados necessários em uma única operação
-    pacientes = session.query(Paciente).all()
-    bairros = session.query(Bairro).all()
-    doencas = session.query(Doenca).all()
-    clinicas_publicas = session.query(Clinica).filter_by(tipo='Pública').all()
-    clinicas_privadas = session.query(Clinica).filter_by(tipo='Privada').all()
-    medicos = session.query(Medico).all()
+    # Carregar dados
     profissionais = session.query(ProfissionalSaude).all()
+    pacientes = session.query(Paciente).all()
+    doencas = session.query(Doenca).all()
+    clinicas_publicas = session.query(Clinica).filter(Clinica.tipo == 'Pública').all()
+    clinicas_privadas = session.query(Clinica).filter(Clinica.tipo == 'Privada').all()
+    medicos = session.query(Medico).all()
+    bairros = session.query(Bairro).all()
 
-    if not pacientes or not bairros or not doencas or not clinicas_publicas or not clinicas_privadas or not medicos or not profissionais:
-        logging.error("Dados insuficientes para gerar atendimentos.")
+    # Validar se todos os dados necessários estão disponíveis
+    if not (profissionais and pacientes and doencas and clinicas_publicas and clinicas_privadas and medicos and bairros):
+        logging.error("Dados insuficientes: faltam profissionais, pacientes, doenças, clínicas ou médicos.")
         return
 
-    # Definindo o período de atendimento
+    # Aplicar a taxa de mortalidade ajustada para cada bairro
+    taxa_mortalidade_bairros = aplicar_taxa_mortalidade_bairros(bairros)
+
+    # Definir início de atendimento e capacidade diária
     data_inicio = datetime(2022, 1, 1)
     dias_entre = (datetime(2024, 12, 31) - data_inicio).days
 
-    for i in range(qtd_atendimentos):
-        try:
-            # Gerar uma data de atendimento aleatória dentro do período de 3 anos
-            data_atendimento = data_inicio + timedelta(days=random.randint(0, dias_entre))
-            logging.info(f"Data de atendimento gerada: {data_atendimento}")
+    atendimentos_gerados = 0
+    atendimentos_batch = []
+    prontuarios_batch = []
 
-            # Selecionar um paciente, bairro e doença aleatoriamente
-            paciente = random.choice(pacientes)
-            logging.info(f"Paciente selecionado: {paciente.id}")
+    while atendimentos_gerados < qtd_atendimentos:
+        # Gera a data do atendimento e verifica a capacidade do dia
+        data_atendimento = data_inicio + timedelta(days=random.randint(0, dias_entre))
 
-            bairro, doenca = random.choice(bairros), random.choice(doencas)
-            logging.info(f"Bairro selecionado: {bairro.id}, Doença selecionada: {doenca.id}")
+        # Seleciona paciente, bairro e doença
+        paciente = random.choice(pacientes)
+        bairro = random.choice(bairros)
+        doenca = random.choice(doencas)
 
-            # Selecionar uma clínica adequada
-            clinica = escolher_clinica(doenca, clinicas_publicas, clinicas_privadas)
-            if not clinica:
-                motivo = "Capacidade excedida"
-                registrar_atendimento_pulado(session, paciente, bairro, doenca, motivo, data_atendimento.date())
-                logging.info(f"Atendimento {i+1}/{qtd_atendimentos} pulado: {motivo}")
-                continue
+        # Escolher clínica ou UPA baseada na gravidade da doença
+        clinica = escolher_clinica(doenca, clinicas_publicas, clinicas_privadas)
+        if not clinica:
+            logging.warning(f"Capacidade excedida para o paciente {paciente.nome}, agendando para outro dia.")
+            gerar_agendamento(session, paciente, clinica, doenca, "Capacidade excedida")
+            continue
 
-            # Selecionar um médico adequado
-            medico = selecionar_medico(paciente, doenca, medicos)
-            if not medico:
-                motivo = "Falta de médico"
-                registrar_atendimento_pulado(session, paciente, bairro, doenca, motivo, data_atendimento.date())
-                logging.info(f"Atendimento {i+1}/{qtd_atendimentos} pulado: {motivo}")
-                continue
+        # Selecionar médico disponível
+        medico = selecionar_medico(paciente, doenca, medicos)
+        if not medico:
+            logging.warning(f"Falta de médico para o paciente {paciente.nome}, reagendando.")
+            gerar_agendamento(session, paciente, clinica, doenca, "Falta de médico")
+            continue
 
-            # Gerar hora de atendimento e conclusão
-            hora_atendimento = str_to_time(fake.time())
-            hora_conclusao = str_to_time(fake.time())
-            if hora_conclusao <= hora_atendimento:
-                hora_conclusao = (datetime.combine(datetime.today(), hora_atendimento) + timedelta(minutes=random.randint(15, 60))).time()
+        # Definir horários do atendimento
+        hora_atendimento = fake.time_object()
+        hora_conclusao = (datetime.combine(datetime.today(), hora_atendimento) + timedelta(minutes=random.randint(15, 120))).time()
 
-            # Definir o status do atendimento com base no ano
-            status = validar_ano_atendimento(data_atendimento)
+        # Verificar o status de acordo com o ano
+        status = validar_ano_atendimento(data_atendimento)
 
-            # Criar o atendimento
-            atendimento = Atendimento(
-                id_paciente=paciente.id,
-                id_bairro=bairro.id,
-                id_doenca=doenca.id,
-                id_clinica=clinica.id,
-                data_atendimento=data_atendimento.date(),
-                status=status,
-                hora_atendimento=hora_atendimento,
-                hora_conclusao=hora_conclusao
-            )
-            atendimentos.append(atendimento)
-            session.add(atendimento)
-            session.flush()
-
-            # Criar prontuário vinculado ao atendimento gerado
-            prontuario = Prontuario(
-                id_paciente=paciente.id,
-                id_atendimento=atendimento.id,
-                id_medico=medico.id,
-                descricao=fake.text(),
-                data=data_atendimento.date(),
-                hora=hora_atendimento,
-                status_conclusao=verificar_encaminhamento(doenca, clinica)
-            )
-            session.add(prontuario)
-
-            # Adicionar médico ao atendimento
-            verificar_e_adicionar_atendimento_profissional(session, atendimento, medico, 'Consulta Médica')
-
-            # Adicionar enfermeiro/técnico ao atendimento
-            enfermeiro_ou_tecnico = selecionar_enfermeiro_ou_tecnico(profissionais)
-            if enfermeiro_ou_tecnico:
-                verificar_e_adicionar_atendimento_profissional(session, atendimento, enfermeiro_ou_tecnico, 'Acompanhamento de Enfermagem')
-
-            logging.info(f"Atendimento {i+1}/{qtd_atendimentos} gerado com sucesso.")
-        except SQLAlchemyError as e:
-            logging.error(f"Erro ao gerar atendimento {i+1}/{qtd_atendimentos}: {e}")
-            session.rollback()
-
-    # Commit de todos os atendimentos, prontuários e atendimentos pulados
-    try:
-        session.commit()
-        logging.info(f"{len(atendimentos)} atendimentos gerados e inseridos com sucesso.")
-        logging.info(f"{len(atendimentos_pulados)} atendimentos pulados.")
-    except SQLAlchemyError as e:
-        logging.error(f"Erro ao confirmar os atendimentos: {e}")
-        session.rollback()
-
-def registrar_atendimento_pulado(session, paciente, bairro, doenca, motivo, data_tentativa):
-    """Registra um atendimento que foi pulado."""
-    try:
-        atendimento_pulado = AtendimentoPulado(
+        # Criar o atendimento
+        atendimento = Atendimento(
             id_paciente=paciente.id,
             id_bairro=bairro.id,
             id_doenca=doenca.id,
-            motivo=motivo,
-            data_tentativa=data_tentativa
+            id_clinica=clinica.id,
+            data_atendimento=data_atendimento.date(),
+            status=status,
+            hora_atendimento=hora_atendimento,
+            hora_conclusao=hora_conclusao
         )
-        session.add(atendimento_pulado)
-        session.flush()
-        logging.info(f"Atendimento pulado registrado: {motivo}")
-    except SQLAlchemyError as e:
-        logging.error(f"Erro ao registrar atendimento pulado: {e}")
-        session.rollback()
+        session.add(atendimento)
+        session.flush()  # Garantir que o atendimento foi salvo e o ID foi gerado
 
+        # Criar prontuário vinculado ao atendimento gerado
+        prontuario = Prontuario(
+            id_paciente=paciente.id,
+            id_atendimento=atendimento.id,  # Usar o ID do atendimento gerado
+            id_medico=medico.id,
+            descricao=fake.text(),
+            data=data_atendimento.date(),
+            hora=hora_atendimento,
+            status_conclusao=gerar_status_conclusao(doenca, clinica, bairro, taxa_mortalidade_bairros[bairro.id])
+        )
+        prontuarios_batch.append(prontuario)
+
+        atendimentos_gerados += 1
+
+        # Commit a cada 1000 atendimentos para otimização
+        if atendimentos_gerados % 1000 == 0:
+            session.bulk_save_objects(atendimentos_batch)
+            session.bulk_save_objects(prontuarios_batch)
+            session.commit()
+            atendimentos_batch.clear()
+            prontuarios_batch.clear()
+
+    # Commit dos atendimentos e prontuários restantes
+    session.bulk_save_objects(prontuarios_batch)
+    session.commit()
+
+    logging.info(f"{atendimentos_gerados} atendimentos foram gerados com sucesso.")
+
+# Funções auxiliares
 def escolher_clinica(doenca, clinicas_publicas, clinicas_privadas):
     """Escolhe a clínica adequada com base na gravidade da doença."""
     if doenca.gravidade in ['Muito Grave', 'Grave']:
@@ -167,18 +154,23 @@ def escolher_clinica(doenca, clinicas_publicas, clinicas_privadas):
     return random.choice(clinicas_privadas)
 
 def selecionar_medico(paciente, doenca, medicos):
-    """Seleciona o médico responsável pelo atendimento."""
-    if paciente.idade <= 12:
-        return next((m for m in medicos if m.especialidade == 'Pediatria'), None) or random.choice(medicos)
+    """Seleciona o médico adequado para o atendimento."""
     if doenca.requer_cirurgia:
         return next((m for m in medicos if m.especialidade == doenca.especialista), None) or random.choice(medicos)
+    if paciente.idade <= 12:
+        return next((m for m in medicos if m.especialidade == 'Pediatria'), None) or random.choice(medicos)
     return next((m for m in medicos if m.especialidade == 'Clínico Geral'), None) or random.choice(medicos)
 
-def verificar_encaminhamento(doenca, clinica):
-    """Verifica a necessidade de encaminhamento de emergência."""
+def gerar_status_conclusao(doenca, clinica, bairro, taxa_mortalidade):
+    """Define o status de conclusão do prontuário com base na doença, local de atendimento e mortalidade."""
     if doenca.requer_cirurgia and 'UPA' in clinica.nome:
         return 'Encaminhado para hospital'
-    return 'Concluído'
+
+    # Probabilidade de óbito
+    if random.random() < taxa_mortalidade:
+        return 'Óbito'
+    
+    return random.choice(['Curado', 'Em tratamento', 'Sem retorno'])
 
 def validar_ano_atendimento(data_atendimento):
     """Valida o status do atendimento com base no ano."""

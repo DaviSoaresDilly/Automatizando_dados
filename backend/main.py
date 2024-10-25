@@ -1,4 +1,4 @@
-# main.py
+# backend/main.py
 import logging
 from sqlalchemy import Engine
 from app.database import get_session, create_app
@@ -34,7 +34,7 @@ def main():
         populate_data(session)
 
         # Geração de atendimentos (simulação com ID)
-        generate_atendimentos(session, 100)
+        generate_atendimentos(session, 5000)
 
         # Fechar a sessão do banco de dados
         session.close()
