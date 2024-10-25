@@ -1,3 +1,4 @@
+# app/models.py
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Date, Time
 from sqlalchemy.orm import relationship, declarative_base
 from datetime import datetime
@@ -47,8 +48,8 @@ class Clinica(Base):
     id = Column(Integer, primary_key=True)
     nome = Column(String, nullable=False)
     tipo = Column(String, nullable=False)
-    capacidade_diaria = Column(Integer)
-    capacidade_leito = Column(Integer)
+    capacidade_diaria = Column(Integer, nullable=False)
+    capacidade_leito = Column(Integer, nullable=False)
     endereco = Column(String)
 
     # Relacionamento com atendimentos
@@ -148,7 +149,7 @@ class Agendamento(Base):
     id_doenca = Column(Integer, ForeignKey('doencas.id'), nullable=False)
     data_agendada = Column(Date, nullable=False)
     motivo = Column(String, nullable=False)
-    data_criacao = Column(Date, default=lambda: datetime.now(datetime.timezone.utc))
+    data_criacao = Column(Date, default=datetime.utcnow)
 
     # Relacionamentos
     paciente = relationship('Paciente')

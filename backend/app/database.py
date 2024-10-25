@@ -10,6 +10,8 @@ db = SQLAlchemy()
 def init_db(app):
     """Inicializa o banco de dados com o Flask app."""
     db.init_app(app)
+    with app.app_context():
+        db.create_all()  # Cria as tabelas no banco de dados se elas não existirem
 
 # Função para obter a sessão do SQLAlchemy
 def get_session():
@@ -32,12 +34,13 @@ def update_atendimento(session, atendimento_id, novos_dados):
 
     try:
         # Atualizando os atributos do atendimento
-        for key, value in novos_dados.items():
-            if hasattr(atendimento, key):
-                setattr(atendimento, key, value)
-            else:
-                raise ValueError(f"O campo {key} não existe no modelo Atendimento.")
-
+        with session.begin():  # Garante o contexto de transação
+            for key, value in novos_dados.items():
+                if hasattr(atendimento, key):
+                    setattr(atendimento, key, value)
+                else:
+                    raise ValueError(f"O campo {key} não existe no modelo Atendimento.")
+        
         # Confirma as mudanças no banco de dados
         session.commit()
     except Exception as e:
@@ -49,6 +52,6 @@ def create_app():
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///your_database.db'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-    init_db(app)  # Inicialize o banco de dados com a aplicação Flask
+    init_db(app)  # Inicializa o banco de dados com a aplicação Flask
 
     return app

@@ -1,99 +1,134 @@
 # app/populate.py
 import logging
+
+from pytest import Session
 from .models import Base, Doenca, Bairro, Paciente, Clinica, Medico, ProfissionalSaude
 from faker import Faker
 import random
 
 fake = Faker('pt_BR')
 
-def reset_database(session):
+def reset_database(session: Session) -> None:
     """Função para limpar as tabelas e resetar o banco de dados antes de inserir novos dados."""
     meta = Base.metadata  # Acessa o metadata do Base
     for table in reversed(meta.sorted_tables):
         session.execute(table.delete())
     session.commit()
 
-# Listas reais de especialidades médicas e doenças com cirurgia
-especialidades_publico = ['Clínico Geral', 'Pediatria', 'Cardiologia', 'Ortopedia', 'Neurologia']
-especialidades_privado = ['Dermatologia', 'Gastroenterologia', 'Oftalmologia', 'Psiquiatria', 'Endocrinologia']
+class Doenca:
+    def __init__(self, nome, especialista, sintomas, requer_cirurgia, gravidade):
+        self.nome = nome
+        self.especialista = especialista
+        self.sintomas = sintomas
+        self.requer_cirurgia = requer_cirurgia
+        self.gravidade = gravidade
 
-# Lista de doenças por especialidade pública e privada
-doencas_reais = [
-    # Especialidades Públicas
-    {'nome': 'Gripe', 'especialista': 'Clínico Geral', 'sintomas': ['febre', 'dor no corpo', 'tosse'], 'requer_cirurgia': False, 'gravidade': 'Leve'},
-    {'nome': 'Pneumonia', 'especialista': 'Clínico Geral', 'sintomas': ['tosse', 'febre alta', 'dor no peito'], 'requer_cirurgia': False, 'gravidade': 'Grave'},
-    {'nome': 'Dengue', 'especialista': 'Clínico Geral', 'sintomas': ['febre alta', 'dores musculares', 'manchas na pele'], 'requer_cirurgia': False, 'gravidade': 'Grave'},
-    {'nome': 'Bronquite', 'especialista': 'Clínico Geral', 'sintomas': ['tosse', 'falta de ar', 'fadiga'], 'requer_cirurgia': False, 'gravidade': 'Moderada'},
-    {'nome': 'Sinusite', 'especialista': 'Clínico Geral', 'sintomas': ['dor facial', 'congestão nasal', 'tosse'], 'requer_cirurgia': False, 'gravidade': 'Leve'},
-    
-    {'nome': 'Otite Média', 'especialista': 'Pediatra', 'sintomas': ['dor de ouvido', 'febre', 'irritabilidade'], 'requer_cirurgia': False, 'gravidade': 'Moderada'},
-    {'nome': 'Amigdalite', 'especialista': 'Pediatra', 'sintomas': ['dor de garganta', 'dificuldade para engolir', 'febre'], 'requer_cirurgia': False, 'gravidade': 'Leve'},
-    {'nome': 'Varicela (Catapora)', 'especialista': 'Pediatra', 'sintomas': ['erupções cutâneas', 'febre', 'coceira'], 'requer_cirurgia': False, 'gravidade': 'Leve'},
-    {'nome': 'Escarlatina', 'especialista': 'Pediatra', 'sintomas': ['erupção vermelha', 'dor de garganta', 'febre alta'], 'requer_cirurgia': False, 'gravidade': 'Grave'},
-    {'nome': 'Asma', 'especialista': 'Pediatra', 'sintomas': ['falta de ar', 'tosse', 'chiado no peito'], 'requer_cirurgia': False, 'gravidade': 'Moderada'},
-    
-    {'nome': 'Infarto do Miocárdio', 'especialista': 'Cardiologista', 'sintomas': ['dor no peito', 'falta de ar', 'suor'], 'requer_cirurgia': True, 'gravidade': 'Muito Grave'},
-    {'nome': 'Arritmia Cardíaca', 'especialista': 'Cardiologista', 'sintomas': ['palpitações', 'tontura', 'fadiga'], 'requer_cirurgia': True, 'gravidade': 'Grave'},
-    {'nome': 'Hipertensão Arterial', 'especialista': 'Cardiologista', 'sintomas': ['dor de cabeça', 'fadiga', 'tontura'], 'requer_cirurgia': False, 'gravidade': 'Moderada'},
-    {'nome': 'Insuficiência Cardíaca', 'especialista': 'Cardiologista', 'sintomas': ['falta de ar', 'inchaço nas pernas', 'fadiga'], 'requer_cirurgia': False, 'gravidade': 'Grave'},
-    {'nome': 'Endocardite', 'especialista': 'Cardiologista', 'sintomas': ['febre', 'dor no peito', 'cansaço'], 'requer_cirurgia': True, 'gravidade': 'Muito Grave'},
-    
-    {'nome': 'Fratura Óssea', 'especialista': 'Ortopedista', 'sintomas': ['dor intensa', 'inchaço', 'deformidade'], 'requer_cirurgia': True, 'gravidade': 'Muito Grave'},
-    {'nome': 'Entorse de Tornozelo', 'especialista': 'Ortopedista', 'sintomas': ['dor', 'inchaço', 'dificuldade para caminhar'], 'requer_cirurgia': False, 'gravidade': 'Moderada'},
-    {'nome': 'Escoliose', 'especialista': 'Ortopedista', 'sintomas': ['desalinhamento da coluna', 'dor nas costas'], 'requer_cirurgia': True, 'gravidade': 'Grave'},
-    {'nome': 'Hérnia de Disco', 'especialista': 'Ortopedista', 'sintomas': ['dor nas costas', 'formigamento nas pernas'], 'requer_cirurgia': True, 'gravidade': 'Grave'},
-    {'nome': 'Luxação', 'especialista': 'Ortopedista', 'sintomas': ['dor intensa', 'inchaço', 'deformidade'], 'requer_cirurgia': True, 'gravidade': 'Grave'},
+class Especialidade:
+    def __init__(self, nome):
+        self.nome = nome
+        self.doencas = []
 
-    {'nome': 'Epilepsia', 'especialista': 'Neurologista', 'sintomas': ['convulsões', 'perda de consciência', 'espasmos musculares'], 'requer_cirurgia': False, 'gravidade': 'Moderada'},
-    {'nome': 'Enxaqueca', 'especialista': 'Neurologista', 'sintomas': ['dor de cabeça intensa', 'náusea', 'sensibilidade à luz'], 'requer_cirurgia': False, 'gravidade': 'Moderada'},
-    {'nome': 'Parkinson', 'especialista': 'Neurologista', 'sintomas': ['tremores', 'rigidez muscular', 'dificuldade para se mover'], 'requer_cirurgia': False, 'gravidade': 'Grave'},
-    {'nome': 'Alzheimer', 'especialista': 'Neurologista', 'sintomas': ['perda de memória', 'confusão mental', 'dificuldade para realizar tarefas'], 'requer_cirurgia': False, 'gravidade': 'Muito Grave'},
-    {'nome': 'AVC (Acidente Vascular Cerebral)', 'especialista': 'Neurologista', 'sintomas': ['fraqueza de um lado do corpo', 'confusão', 'perda de fala'], 'requer_cirurgia': True, 'gravidade': 'Muito Grave'},
+    def adicionar_doenca(self, doenca):
+        self.doencas.append(doenca)
+
+    def filtrar_doencas(self, requer_cirurgia=None, gravidade=None):
+        return [
+            doenca for doenca in self.doencas
+            if (requer_cirurgia is None or doenca.requer_cirurgia == requer_cirurgia) and
+               (gravidade is None or doenca.gravidade == gravidade)
+        ]
+
+# Criando especialidades e adicionando doenças
+especialidades = {
+    "Clínico Geral": Especialidade("Clínico Geral"),
+    "Pediatra": Especialidade("Pediatra"),
+    "Cardiologista": Especialidade("Cardiologista"),
+    "Ortopedista": Especialidade("Ortopedista"),
+    "Neurologista": Especialidade("Neurologista"),
+    "Dermatologista": Especialidade("Dermatologista"),
+    "Gastroenterologista": Especialidade("Gastroenterologista"),
+    "Oftalmologista": Especialidade("Oftalmologista"),
+    "Psiquiatra": Especialidade("Psiquiatra"),
+    "Endocrinologista": Especialidade("Endocrinologista")
+}
+
+# Lista de doenças por especialidade
+doencas = [
+    # Exemplo de instância
+    Doenca('Gripe', 'Clínico Geral', ['febre', 'dor no corpo', 'tosse'], False, 'Leve'),
+    Doenca('Pneumonia', 'Clínico Geral', ['tosse', 'febre alta', 'dor no peito'], False, 'Grave'),
+    Doenca('Dengue', 'Clínico Geral', ['febre alta', 'dores musculares', 'manchas na pele'], False, 'Grave'),
+    Doenca('Bronquite', 'Clínico Geral', ['tosse', 'falta de ar', 'fadiga'], False, 'Moderada'),
+    Doenca('Sinusite', 'Clínico Geral', ['dor facial', 'congestão nasal', 'tosse'], False, 'Leve'),
+    
+    Doenca('Otite Média', 'Pediatra', ['dor de ouvido', 'febre', 'irritabilidade'], False, 'Moderada'),
+    Doenca('Amigdalite', 'Pediatra', ['dor de garganta', 'dificuldade para engolir', 'febre'], False, 'Leve'),
+    Doenca('Varicela (Catapora)', 'Pediatra', ['erupções cutâneas', 'febre', 'coceira'], False, 'Leve'),
+    Doenca('Escarlatina', 'Pediatra', ['erupção vermelha', 'dor de garganta', 'febre alta'], False, 'Grave'),
+    Doenca('Asma', 'Pediatra', ['falta de ar', 'tosse', 'chiado no peito'], False, 'Moderada'),
+    
+    Doenca('Infarto do Miocárdio', 'Cardiologista', ['dor no peito', 'falta de ar', 'suor'], True, 'Muito Grave'),
+    Doenca('Arritmia Cardíaca', 'Cardiologista', ['palpitações', 'tontura', 'fadiga'], True, 'Grave'),
+    Doenca('Hipertensão Arterial', 'Cardiologista', ['dor de cabeça', 'fadiga', 'tontura'], False, 'Moderada'),
+    Doenca('Insuficiência Cardíaca', 'Cardiologista', ['falta de ar', 'inchaço nas pernas', 'fadiga'], False, 'Grave'),
+    Doenca('Endocardite', 'Cardiologista', ['febre', 'dor no peito', 'cansaço'], True, 'Muito Grave'),
+    
+    Doenca('Fratura Óssea', 'Ortopedista', ['dor intensa', 'inchaço', 'deformidade'], True, 'Muito Grave'),
+    Doenca('Entorse de Tornozelo', 'Ortopedista', ['dor', 'inchaço', 'dificuldade para caminhar'], False, 'Moderada'),
+    Doenca('Escoliose', 'Ortopedista', ['desalinhamento da coluna', 'dor nas costas'], True, 'Grave'),
+    Doenca('Hérnia de Disco', 'Ortopedista', ['dor nas costas', 'formigamento nas pernas'], True, 'Grave'),
+    Doenca('Luxação', 'Ortopedista', ['dor intensa', 'inchaço', 'deformidade'], True, 'Grave'),
+
+    Doenca('Epilepsia', 'Neurologista', ['convulsões', 'perda de consciência', 'espasmos musculares'], False, 'Moderada'),
+    Doenca('Enxaqueca', 'Neurologista', ['dor de cabeça intensa', 'náusea', 'sensibilidade à luz'], False, 'Moderada'),
+    Doenca('Parkinson', 'Neurologista', ['tremores', 'rigidez muscular', 'dificuldade para se mover'], False, 'Grave'),
+    Doenca('Alzheimer', 'Neurologista', ['perda de memória', 'confusão mental', 'dificuldade para realizar tarefas'], False, 'Muito Grave'),
+    Doenca('AVC (Acidente Vascular Cerebral)', 'Neurologista', ['fraqueza de um lado do corpo', 'confusão', 'perda de fala'], True, 'Muito Grave'),
 
     # Especialidades Privadas
-    {'nome': 'Psoríase', 'especialista': 'Dermatologista', 'sintomas': ['manchas vermelhas na pele', 'coceira', 'descamação'], 'requer_cirurgia': False, 'gravidade': 'Moderada'},
-    {'nome': 'Acne', 'especialista': 'Dermatologista', 'sintomas': ['espinhas', 'cravos', 'vermelhidão na pele'], 'requer_cirurgia': False, 'gravidade': 'Leve'},
-    {'nome': 'Melanoma', 'especialista': 'Dermatologista', 'sintomas': ['manchas escuras na pele', 'mudança de cor', 'sangramento'], 'requer_cirurgia': True, 'gravidade': 'Muito Grave'},
-    {'nome': 'Dermatite Atópica', 'especialista': 'Dermatologista', 'sintomas': ['coceira', 'vermelhidão', 'rachaduras na pele'], 'requer_cirurgia': False, 'gravidade': 'Moderada'},
-    {'nome': 'Vitiligo', 'especialista': 'Dermatologista', 'sintomas': ['perda de pigmentação', 'manchas brancas na pele'], 'requer_cirurgia': False, 'gravidade': 'Leve'},
+    Doenca('Psoríase', 'Dermatologista', ['manchas vermelhas na pele', 'coceira', 'descamação'], False, 'Moderada'),
+    Doenca('Acne', 'Dermatologista', ['espinhas', 'cravos', 'vermelhidão na pele'], False, 'Leve'),
+    Doenca('Melanoma', 'Dermatologista', ['manchas escuras na pele', 'mudança de cor', 'sangramento'], True, 'Muito Grave'),
+    Doenca('Dermatite Atópica', 'Dermatologista', ['coceira', 'vermelhidão', 'rachaduras na pele'], False, 'Moderada'),
+    Doenca('Vitiligo', 'Dermatologista', ['perda de pigmentação', 'manchas brancas na pele'], False, 'Leve'),
 
-    {'nome': 'Gastrite', 'especialista': 'Gastroenterologista', 'sintomas': ['dor abdominal', 'azia', 'náusea'], 'requer_cirurgia': False, 'gravidade': 'Moderada'},
-    {'nome': 'Úlcera Péptica', 'especialista': 'Gastroenterologista', 'sintomas': ['dor abdominal', 'sangramento', 'indigestão'], 'requer_cirurgia': True, 'gravidade': 'Grave'},
-    {'nome': 'Doença de Crohn', 'especialista': 'Gastroenterologista', 'sintomas': ['dor abdominal', 'diarreia', 'perda de peso'], 'requer_cirurgia': True, 'gravidade': 'Grave'},
-    {'nome': 'Hepatite', 'especialista': 'Gastroenterologista', 'sintomas': ['fadiga', 'pele amarelada', 'náusea'], 'requer_cirurgia': False, 'gravidade': 'Grave'},
-    {'nome': 'Síndrome do Intestino Irritável', 'especialista': 'Gastroenterologista', 'sintomas': ['dor abdominal', 'diarreia', 'inchaço'], 'requer_cirurgia': False, 'gravidade': 'Moderada'},
+    Doenca('Gastrite', 'Gastroenterologista', ['dor abdominal', 'azia', 'náusea'], False, 'Moderada'),
+    Doenca('Úlcera Péptica', 'Gastroenterologista', ['dor abdominal', 'sangramento', 'indigestão'], True, 'Grave'),
+    Doenca('Doença de Crohn', 'Gastroenterologista', ['dor abdominal', 'diarreia', 'perda de peso'], True, 'Grave'),
+    Doenca('Hepatite', 'Gastroenterologista', ['fadiga', 'pele amarelada', 'náusea'], False, 'Grave'),
+    Doenca('Síndrome do Intestino Irritável', 'Gastroenterologista', ['dor abdominal', 'diarreia', 'inchaço'], False, 'Moderada'),
 
-    {'nome': 'Miopia', 'especialista': 'Oftalmologista', 'sintomas': ['visão borrada à distância'], 'requer_cirurgia': False, 'gravidade': 'Leve'},
-    {'nome': 'Catarata', 'especialista': 'Oftalmologista', 'sintomas': ['visão embaçada', 'sensibilidade à luz'], 'requer_cirurgia': True, 'gravidade': 'Grave'},
-    {'nome': 'Glaucoma', 'especialista': 'Oftalmologista', 'sintomas': ['perda de visão', 'dor ocular', 'ver halos ao redor de luzes'], 'requer_cirurgia': True, 'gravidade': 'Grave'},
-    {'nome': 'Descolamento de Retina', 'especialista': 'Oftalmologista', 'sintomas': ['perda súbita de visão', 'flashes de luz', 'moscas volantes'], 'requer_cirurgia': True, 'gravidade': 'Muito Grave'},
-    {'nome': 'Conjuntivite', 'especialista': 'Oftalmologista', 'sintomas': ['vermelhidão ocular', 'coceira', 'lacrimejamento'], 'requer_cirurgia': False, 'gravidade': 'Leve'},
+    Doenca('Miopia', 'Oftalmologista', ['visão borrada à distância'], False, 'Leve'),
+    Doenca('Catarata', 'Oftalmologista', ['visão embaçada', 'sensibilidade à luz'], True, 'Grave'),
+    Doenca('Glaucoma', 'Oftalmologista', ['perda de visão', 'dor ocular', 'ver halos ao redor de luzes'], True, 'Grave'),
+    Doenca('Descolamento de Retina', 'Oftalmologista', ['perda súbita de visão', 'flashes de luz', 'moscas volantes'], True, 'Muito Grave'),
+    Doenca('Conjuntivite', 'Oftalmologista', ['vermelhidão ocular', 'coceira', 'lacrimejamento'], False, 'Leve'),
 
-    {'nome': 'Depressão', 'especialista': 'Psiquiatra', 'sintomas': ['tristeza persistente', 'fadiga', 'falta de interesse'], 'requer_cirurgia': False, 'gravidade': 'Moderada'},
-    {'nome': 'Transtorno de Ansiedade', 'especialista': 'Psiquiatra', 'sintomas': ['preocupação excessiva', 'insônia', 'tensão muscular'], 'requer_cirurgia': False, 'gravidade': 'Moderada'},
-    {'nome': 'Transtorno Bipolar', 'especialista': 'Psiquiatra', 'sintomas': ['mudanças de humor', 'comportamento impulsivo', 'depressão'], 'requer_cirurgia': False, 'gravidade': 'Grave'},
-    {'nome': 'Esquizofrenia', 'especialista': 'Psiquiatra', 'sintomas': ['alucinações', 'delírios', 'isolamento social'], 'requer_cirurgia': False, 'gravidade': 'Muito Grave'},
-    {'nome': 'Transtorno de Estresse Pós-Traumático (TEPT)', 'especialista': 'Psiquiatra', 'sintomas': ['flashbacks', 'ansiedade', 'insônia'], 'requer_cirurgia': False, 'gravidade': 'Moderada'},
+    Doenca('Depressão', 'Psiquiatra', ['tristeza persistente', 'fadiga', 'falta de interesse'], False, 'Moderada'),
+    Doenca('Transtorno de Ansiedade', 'Psiquiatra', ['preocupação excessiva', 'insônia', 'tensão muscular'], False, 'Moderada'),
+    Doenca('Transtorno Bipolar', 'Psiquiatra', ['mudanças de humor', 'comportamento impulsivo', 'depressão'], False, 'Grave'),
+    Doenca('Esquizofrenia', 'Psiquiatra', ['alucinações', 'delírios', 'isolamento social'], False, 'Muito Grave'),
+    Doenca('Transtorno de Estresse Pós-Traumático (TEPT)', 'Psiquiatra', ['flashbacks', 'ansiedade', 'insônia'], False, 'Moderada'),
 
-    {'nome': 'Diabetes Tipo 1', 'especialista': 'Endocrinologista', 'sintomas': ['sede excessiva', 'perda de peso', 'fadiga'], 'requer_cirurgia': False, 'gravidade': 'Grave'},
-    {'nome': 'Diabetes Tipo 2', 'especialista': 'Endocrinologista', 'sintomas': ['sede excessiva', 'fadiga', 'visão embaçada'], 'requer_cirurgia': False, 'gravidade': 'Moderada'},
-    {'nome': 'Hipotireoidismo', 'especialista': 'Endocrinologista', 'sintomas': ['fadiga', 'aumento de peso', 'sensibilidade ao frio'], 'requer_cirurgia': False, 'gravidade': 'Moderada'},
-    {'nome': 'Hipertireoidismo', 'especialista': 'Endocrinologista', 'sintomas': ['perda de peso', 'ansiedade', 'insônia'], 'requer_cirurgia': False, 'gravidade': 'Moderada'},
-    {'nome': 'Síndrome de Cushing', 'especialista': 'Endocrinologista', 'sintomas': ['ganho de peso', 'rosto arredondado', 'fraqueza muscular'], 'requer_cirurgia': True, 'gravidade': 'Grave'}
+    Doenca('Diabetes Tipo 1', 'Endocrinologista', ['sede excessiva', 'perda de peso', 'fadiga'], False, 'Grave'),
+    Doenca('Diabetes Tipo 2', 'Endocrinologista', ['sede excessiva', 'fadiga', 'visão embaçada'], False, 'Moderada'),
+    Doenca('Hipotireoidismo', 'Endocrinologista', ['fadiga', 'aumento de peso', 'sensibilidade ao frio'], False, 'Moderada'),
+    Doenca('Hipertireoidismo', 'Endocrinologista', ['perda de peso', 'ansiedade', 'insônia'], False, 'Moderada'),
+    Doenca('Síndrome de Cushing', 'Endocrinologista', ['ganho de peso', 'rosto arredondado', 'fraqueza muscular'], True, 'Grave')
 ]
+
+# Adicionando as doenças às especialidades correspondentes
+for doenca in doencas:
+    especialidades[doenca.especialista].adicionar_doenca(doenca)
+
+# Exemplo de filtragem por doenças que requerem cirurgia e são de gravidade 'Grave' na especialidade 'Cardiologista'
+doencas_filtradas = especialidades['Cardiologista'].filtrar_doencas(requer_cirurgia=True, gravidade='Grave')
+for doenca in doencas_filtradas:
+    print(f"Doença: {doenca.nome}, Gravidade: {doenca.gravidade}")
+
 
 def populate_doencas(session):
     """Popula doenças no banco de dados."""
-    doencas = [
-        Doenca(
-            nome=doenca['nome'],
-            especialista=doenca['especialista'],
-            sintomas=', '.join(doenca['sintomas']),
-            gravidade=doenca['gravidade'],
-            requer_cirurgia=doenca['requer_cirurgia']
-        )
-        for doenca in doencas_reais
-    ]
     session.add_all(doencas)
     session.commit()
 
@@ -157,7 +192,7 @@ def populate_medicos(session):
                 # Centro de Saúde: 4 clínicos gerais, 1 pediatra
                 add_medicos(clinica, medicos, 4, 1, ['Pediatria'])
         else:
-            # Clínicas privadas: 5 especialistas por clínica
+            # Clínicas privadas: 5 especialistas por clínica, escolhidos aleatoriamente entre especialidades privadas
             add_medicos(clinica, medicos, 0, 5, especialidades_privado)
 
     session.add_all(medicos)
