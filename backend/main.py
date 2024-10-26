@@ -3,7 +3,7 @@ import logging
 from sqlalchemy import Engine
 from app.database import get_session, create_app
 from app.models import Base
-from app.populate import populate_data
+from app.populate import populate_database  # Corrigido para importar populate_database
 from app.generate_atendimentos import generate_atendimentos
 
 # Configuração básica do logging
@@ -31,10 +31,10 @@ def main():
         reset_database(engine)
 
         # População dos dados
-        populate_data(session)
+        populate_database(session)
 
         # Geração de atendimentos (simulação com ID)
-        generate_atendimentos(session, 50000)
+        generate_atendimentos(session, 43875)
 
         # Fechar a sessão do banco de dados
         session.close()

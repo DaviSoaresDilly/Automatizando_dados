@@ -1,12 +1,17 @@
 # app/populate.py
+from datetime import timedelta
 import logging
-from .models import Base, Doenca, Bairro, Paciente, Clinica, Medico, ProfissionalSaude
+from .models import Agendamento, AtendimentoProfissional, AtendimentoPulado, Base, Doenca, Bairro, Paciente, Clinica, Medico, ProfissionalSaude
 from faker import Faker
 import random
 import json
 
 fake = Faker('pt_BR')
 
+# Configuração de logging detalhado
+logging.basicConfig(level=logging.INFO)
+
+# Função para resetar o banco de dados
 def reset_database(session):
     """Função para limpar as tabelas e resetar o banco de dados antes de inserir novos dados."""
     meta = Base.metadata
@@ -14,6 +19,7 @@ def reset_database(session):
         session.execute(table.delete())
     session.commit()
 
+# Definição de classes para especialidades e doenças
 class Especialidade:
     def __init__(self, nome):
         self.nome = nome
@@ -29,105 +35,104 @@ class Especialidade:
                (gravidade is None or doenca.gravidade == gravidade)
         ]
 
-# Dicionário de especialidades
-especialidades = {
-    "Pediatria": Especialidade("Pediatria"),
-    "Cardiologia": Especialidade("Cardiologia"),
-    "Ortopedia": Especialidade("Ortopedia"),
-    "Ginecologia": Especialidade("Ginecologia"),
-    "Dermatologia": Especialidade("Dermatologia"),
-    "Oftalmologia": Especialidade("Oftalmologia"),
-    "Neurologia": Especialidade("Neurologia"),
-    "Gastroenterologia": Especialidade("Gastroenterologia"),
-    "Psiquiatria": Especialidade("Psiquiatria"),
-    "Endocrinologia": Especialidade("Endocrinologia")
-}
-
 # Lista de especialidades para médicos que atendem em clínicas públicas
 especialidades_publico = ["Pediatria", "Cardiologia", "Ortopedia", "Ginecologia", "Dermatologia"]
-
 # Lista de especialidades para médicos que atendem em clínicas privadas
 especialidades_privado = ["Oftalmologia", "Neurologia", "Gastroenterologia", "Psiquiatria", "Endocrinologia"]
 
-# Lista de doenças por especialidade
-doencas = [
-    # Exemplo de instância
-    Doenca('Gripe', 'Clínico Geral', ['febre', 'dor no corpo', 'tosse'], False, 'Leve'),
-    Doenca('Pneumonia', 'Clínico Geral', ['tosse', 'febre alta', 'dor no peito'], False, 'Grave'),
-    Doenca('Dengue', 'Clínico Geral', ['febre alta', 'dores musculares', 'manchas na pele'], False, 'Grave'),
-    Doenca('Bronquite', 'Clínico Geral', ['tosse', 'falta de ar', 'fadiga'], False, 'Moderada'),
-    Doenca('Sinusite', 'Clínico Geral', ['dor facial', 'congestão nasal', 'tosse'], False, 'Leve'),
-    
-    Doenca('Otite Média', 'Pediatra', ['dor de ouvido', 'febre', 'irritabilidade'], False, 'Moderada'),
-    Doenca('Amigdalite', 'Pediatra', ['dor de garganta', 'dificuldade para engolir', 'febre'], False, 'Leve'),
-    Doenca('Varicela (Catapora)', 'Pediatra', ['erupções cutâneas', 'febre', 'coceira'], False, 'Leve'),
-    Doenca('Escarlatina', 'Pediatra', ['erupção vermelha', 'dor de garganta', 'febre alta'], False, 'Grave'),
-    Doenca('Asma', 'Pediatra', ['falta de ar', 'tosse', 'chiado no peito'], False, 'Moderada'),
-    
-    Doenca('Infarto do Miocárdio', 'Cardiologista', ['dor no peito', 'falta de ar', 'suor'], True, 'Muito Grave'),
-    Doenca('Arritmia Cardíaca', 'Cardiologista', ['palpitações', 'tontura', 'fadiga'], True, 'Grave'),
-    Doenca('Hipertensão Arterial', 'Cardiologista', ['dor de cabeça', 'fadiga', 'tontura'], False, 'Moderada'),
-    Doenca('Insuficiência Cardíaca', 'Cardiologista', ['falta de ar', 'inchaço nas pernas', 'fadiga'], False, 'Grave'),
-    Doenca('Endocardite', 'Cardiologista', ['febre', 'dor no peito', 'cansaço'], True, 'Muito Grave'),
-    
-    Doenca('Fratura Óssea', 'Ortopedista', ['dor intensa', 'inchaço', 'deformidade'], True, 'Muito Grave'),
-    Doenca('Entorse de Tornozelo', 'Ortopedista', ['dor', 'inchaço', 'dificuldade para caminhar'], False, 'Moderada'),
-    Doenca('Escoliose', 'Ortopedista', ['desalinhamento da coluna', 'dor nas costas'], True, 'Grave'),
-    Doenca('Hérnia de Disco', 'Ortopedista', ['dor nas costas', 'formigamento nas pernas'], True, 'Grave'),
-    Doenca('Luxação', 'Ortopedista', ['dor intensa', 'inchaço', 'deformidade'], True, 'Grave'),
-
-    Doenca('Epilepsia', 'Neurologista', ['convulsões', 'perda de consciência', 'espasmos musculares'], False, 'Moderada'),
-    Doenca('Enxaqueca', 'Neurologista', ['dor de cabeça intensa', 'náusea', 'sensibilidade à luz'], False, 'Moderada'),
-    Doenca('Parkinson', 'Neurologista', ['tremores', 'rigidez muscular', 'dificuldade para se mover'], False, 'Grave'),
-    Doenca('Alzheimer', 'Neurologista', ['perda de memória', 'confusão mental', 'dificuldade para realizar tarefas'], False, 'Muito Grave'),
-    Doenca('AVC (Acidente Vascular Cerebral)', 'Neurologista', ['fraqueza de um lado do corpo', 'confusão', 'perda de fala'], True, 'Muito Grave'),
-
-    # Especialidades Privadas
-    Doenca('Psoríase', 'Dermatologista', ['manchas vermelhas na pele', 'coceira', 'descamação'], False, 'Moderada'),
-    Doenca('Acne', 'Dermatologista', ['espinhas', 'cravos', 'vermelhidão na pele'], False, 'Leve'),
-    Doenca('Melanoma', 'Dermatologista', ['manchas escuras na pele', 'mudança de cor', 'sangramento'], True, 'Muito Grave'),
-    Doenca('Dermatite Atópica', 'Dermatologista', ['coceira', 'vermelhidão', 'rachaduras na pele'], False, 'Moderada'),
-    Doenca('Vitiligo', 'Dermatologista', ['perda de pigmentação', 'manchas brancas na pele'], False, 'Leve'),
-
-    Doenca('Gastrite', 'Gastroenterologista', ['dor abdominal', 'azia', 'náusea'], False, 'Moderada'),
-    Doenca('Úlcera Péptica', 'Gastroenterologista', ['dor abdominal', 'sangramento', 'indigestão'], True, 'Grave'),
-    Doenca('Doença de Crohn', 'Gastroenterologista', ['dor abdominal', 'diarreia', 'perda de peso'], True, 'Grave'),
-    Doenca('Hepatite', 'Gastroenterologista', ['fadiga', 'pele amarelada', 'náusea'], False, 'Grave'),
-    Doenca('Síndrome do Intestino Irritável', 'Gastroenterologista', ['dor abdominal', 'diarreia', 'inchaço'], False, 'Moderada'),
-
-    Doenca('Miopia', 'Oftalmologista', ['visão borrada à distância'], False, 'Leve'),
-    Doenca('Catarata', 'Oftalmologista', ['visão embaçada', 'sensibilidade à luz'], True, 'Grave'),
-    Doenca('Glaucoma', 'Oftalmologista', ['perda de visão', 'dor ocular', 'ver halos ao redor de luzes'], True, 'Grave'),
-    Doenca('Descolamento de Retina', 'Oftalmologista', ['perda súbita de visão', 'flashes de luz', 'moscas volantes'], True, 'Muito Grave'),
-    Doenca('Conjuntivite', 'Oftalmologista', ['vermelhidão ocular', 'coceira', 'lacrimejamento'], False, 'Leve'),
-
-    Doenca('Depressão', 'Psiquiatra', ['tristeza persistente', 'fadiga', 'falta de interesse'], False, 'Moderada'),
-    Doenca('Transtorno de Ansiedade', 'Psiquiatra', ['preocupação excessiva', 'insônia', 'tensão muscular'], False, 'Moderada'),
-    Doenca('Transtorno Bipolar', 'Psiquiatra', ['mudanças de humor', 'comportamento impulsivo', 'depressão'], False, 'Grave'),
-    Doenca('Esquizofrenia', 'Psiquiatra', ['alucinações', 'delírios', 'isolamento social'], False, 'Muito Grave'),
-    Doenca('Transtorno de Estresse Pós-Traumático (TEPT)', 'Psiquiatra', ['flashbacks', 'ansiedade', 'insônia'], False, 'Moderada'),
-
-    Doenca('Diabetes Tipo 1', 'Endocrinologista', ['sede excessiva', 'perda de peso', 'fadiga'], False, 'Grave'),
-    Doenca('Diabetes Tipo 2', 'Endocrinologista', ['sede excessiva', 'fadiga', 'visão embaçada'], False, 'Moderada'),
-    Doenca('Hipotireoidismo', 'Endocrinologista', ['fadiga', 'aumento de peso', 'sensibilidade ao frio'], False, 'Moderada'),
-    Doenca('Hipertireoidismo', 'Endocrinologista', ['perda de peso', 'ansiedade', 'insônia'], False, 'Moderada'),
-    Doenca('Síndrome de Cushing', 'Endocrinologista', ['ganho de peso', 'rosto arredondado', 'fraqueza muscular'], True, 'Grave')
-]
-
-# Adicionando as doenças às especialidades correspondentes
-for doenca in doencas:
-    especialidade_nome = doenca.especialista
-    if especialidade_nome in especialidades:
-        especialidades[especialidade_nome].adicionar_doenca(doenca)
-
-# Exemplo de acesso aos sintomas em formato de lista:
-sintomas_lista = json.loads(doenca.sintomas)
-
+# Exemplo de filtragem de doenças por especialidade
 def populate_doencas(session):
-    """Popula doenças no banco de dados."""
+    # Lista de doenças por especialidade
+    doencas = [
+        # Exemplo de instância
+        Doenca('Gripe', 'Clínico Geral', ['febre', 'dor no corpo', 'tosse'], False, 'Leve'),
+        Doenca('Pneumonia', 'Clínico Geral', ['tosse', 'febre alta', 'dor no peito'], False, 'Grave'),
+        Doenca('Dengue', 'Clínico Geral', ['febre alta', 'dores musculares', 'manchas na pele'], False, 'Grave'),
+        Doenca('Bronquite', 'Clínico Geral', ['tosse', 'falta de ar', 'fadiga'], False, 'Moderada'),
+        Doenca('Sinusite', 'Clínico Geral', ['dor facial', 'congestão nasal', 'tosse'], False, 'Leve'),
+        
+        Doenca('Otite Média', 'Pediatra', ['dor de ouvido', 'febre', 'irritabilidade'], False, 'Moderada'),
+        Doenca('Amigdalite', 'Pediatra', ['dor de garganta', 'dificuldade para engolir', 'febre'], False, 'Leve'),
+        Doenca('Varicela (Catapora)', 'Pediatra', ['erupções cutâneas', 'febre', 'coceira'], False, 'Leve'),
+        Doenca('Escarlatina', 'Pediatra', ['erupção vermelha', 'dor de garganta', 'febre alta'], False, 'Grave'),
+        Doenca('Asma', 'Pediatra', ['falta de ar', 'tosse', 'chiado no peito'], False, 'Moderada'),
+        
+        Doenca('Infarto do Miocárdio', 'Cardiologista', ['dor no peito', 'falta de ar', 'suor'], True, 'Muito Grave'),
+        Doenca('Arritmia Cardíaca', 'Cardiologista', ['palpitações', 'tontura', 'fadiga'], True, 'Grave'),
+        Doenca('Hipertensão Arterial', 'Cardiologista', ['dor de cabeça', 'fadiga', 'tontura'], False, 'Moderada'),
+        Doenca('Insuficiência Cardíaca', 'Cardiologista', ['falta de ar', 'inchaço nas pernas', 'fadiga'], False, 'Grave'),
+        Doenca('Endocardite', 'Cardiologista', ['febre', 'dor no peito', 'cansaço'], True, 'Muito Grave'),
+        
+        Doenca('Fratura Óssea', 'Ortopedista', ['dor intensa', 'inchaço', 'deformidade'], True, 'Muito Grave'),
+        Doenca('Entorse de Tornozelo', 'Ortopedista', ['dor', 'inchaço', 'dificuldade para caminhar'], False, 'Moderada'),
+        Doenca('Escoliose', 'Ortopedista', ['desalinhamento da coluna', 'dor nas costas'], True, 'Grave'),
+        Doenca('Hérnia de Disco', 'Ortopedista', ['dor nas costas', 'formigamento nas pernas'], True, 'Grave'),
+        Doenca('Luxação', 'Ortopedista', ['dor intensa', 'inchaço', 'deformidade'], True, 'Grave'),
+
+        Doenca('Epilepsia', 'Neurologista', ['convulsões', 'perda de consciência', 'espasmos musculares'], False, 'Moderada'),
+        Doenca('Enxaqueca', 'Neurologista', ['dor de cabeça intensa', 'náusea', 'sensibilidade à luz'], False, 'Moderada'),
+        Doenca('Parkinson', 'Neurologista', ['tremores', 'rigidez muscular', 'dificuldade para se mover'], False, 'Grave'),
+        Doenca('Alzheimer', 'Neurologista', ['perda de memória', 'confusão mental', 'dificuldade para realizar tarefas'], False, 'Muito Grave'),
+        Doenca('AVC (Acidente Vascular Cerebral)', 'Neurologista', ['fraqueza de um lado do corpo', 'confusão', 'perda de fala'], True, 'Muito Grave'),
+
+        # Especialidades Privadas
+        Doenca('Psoríase', 'Dermatologista', ['manchas vermelhas na pele', 'coceira', 'descamação'], False, 'Moderada'),
+        Doenca('Acne', 'Dermatologista', ['espinhas', 'cravos', 'vermelhidão na pele'], False, 'Leve'),
+        Doenca('Melanoma', 'Dermatologista', ['manchas escuras na pele', 'mudança de cor', 'sangramento'], True, 'Muito Grave'),
+        Doenca('Dermatite Atópica', 'Dermatologista', ['coceira', 'vermelhidão', 'rachaduras na pele'], False, 'Moderada'),
+        Doenca('Vitiligo', 'Dermatologista', ['perda de pigmentação', 'manchas brancas na pele'], False, 'Leve'),
+
+        Doenca('Gastrite', 'Gastroenterologista', ['dor abdominal', 'azia', 'náusea'], False, 'Moderada'),
+        Doenca('Úlcera Péptica', 'Gastroenterologista', ['dor abdominal', 'sangramento', 'indigestão'], True, 'Grave'),
+        Doenca('Doença de Crohn', 'Gastroenterologista', ['dor abdominal', 'diarreia', 'perda de peso'], True, 'Grave'),
+        Doenca('Hepatite', 'Gastroenterologista', ['fadiga', 'pele amarelada', 'náusea'], False, 'Grave'),
+        Doenca('Síndrome do Intestino Irritável', 'Gastroenterologista', ['dor abdominal', 'diarreia', 'inchaço'], False, 'Moderada'),
+
+        Doenca('Miopia', 'Oftalmologista', ['visão borrada à distância'], False, 'Leve'),
+        Doenca('Catarata', 'Oftalmologista', ['visão embaçada', 'sensibilidade à luz'], True, 'Grave'),
+        Doenca('Glaucoma', 'Oftalmologista', ['perda de visão', 'dor ocular', 'ver halos ao redor de luzes'], True, 'Grave'),
+        Doenca('Descolamento de Retina', 'Oftalmologista', ['perda súbita de visão', 'flashes de luz', 'moscas volantes'], True, 'Muito Grave'),
+        Doenca('Conjuntivite', 'Oftalmologista', ['vermelhidão ocular', 'coceira', 'lacrimejamento'], False, 'Leve'),
+
+        Doenca('Depressão', 'Psiquiatra', ['tristeza persistente', 'fadiga', 'falta de interesse'], False, 'Moderada'),
+        Doenca('Transtorno de Ansiedade', 'Psiquiatra', ['preocupação excessiva', 'insônia', 'tensão muscular'], False, 'Moderada'),
+        Doenca('Transtorno Bipolar', 'Psiquiatra', ['mudanças de humor', 'comportamento impulsivo', 'depressão'], False, 'Grave'),
+        Doenca('Esquizofrenia', 'Psiquiatra', ['alucinações', 'delírios', 'isolamento social'], False, 'Muito Grave'),
+        Doenca('Transtorno de Estresse Pós-Traumático (TEPT)', 'Psiquiatra', ['flashbacks', 'ansiedade', 'insônia'], False, 'Moderada'),
+
+        Doenca('Diabetes Tipo 1', 'Endocrinologista', ['sede excessiva', 'perda de peso', 'fadiga'], False, 'Grave'),
+        Doenca('Diabetes Tipo 2', 'Endocrinologista', ['sede excessiva', 'fadiga', 'visão embaçada'], False, 'Moderada'),
+        Doenca('Hipotireoidismo', 'Endocrinologista', ['fadiga', 'aumento de peso', 'sensibilidade ao frio'], False, 'Moderada'),
+        Doenca('Hipertireoidismo', 'Endocrinologista', ['perda de peso', 'ansiedade', 'insônia'], False, 'Moderada'),
+        Doenca('Síndrome de Cushing', 'Endocrinologista', ['ganho de peso', 'rosto arredondado', 'fraqueza muscular'], True, 'Grave')
+    ]
     session.add_all(doencas)
     session.commit()
 
+    # Dicionário de especialidades
+    especialidades = {
+        "Pediatria": Especialidade("Pediatria"),
+        "Cardiologia": Especialidade("Cardiologia"),
+        "Ortopedia": Especialidade("Ortopedia"),
+        "Ginecologia": Especialidade("Ginecologia"),
+        "Dermatologia": Especialidade("Dermatologia"),
+        "Oftalmologia": Especialidade("Oftalmologia"),
+        "Neurologia": Especialidade("Neurologia"),
+        "Gastroenterologia": Especialidade("Gastroenterologia"),
+        "Psiquiatria": Especialidade("Psiquiatria"),
+        "Endocrinologia": Especialidade("Endocrinologia")
+    }
+
+    # Adicionando as doenças às especialidades correspondentes
+    for doenca in doencas:
+        especialidade_nome = doenca.especialista
+        if especialidade_nome in especialidades:
+            especialidades[especialidade_nome].adicionar_doenca(doenca)
+
+    # Exemplo de acesso aos sintomas em formato de lista:
+    sintomas_lista = json.loads(doenca.sintomas)
+
+# População de bairros
 def populate_bairros(session):
     """Popula bairros no banco de dados."""
     bairros = [
@@ -137,6 +142,7 @@ def populate_bairros(session):
     session.add_all(bairros)
     session.commit()
 
+# População de pacientes
 def populate_pacientes(session, total_populacao):
     """Popula pacientes no banco de dados."""
     pacientes = [
@@ -152,6 +158,7 @@ def populate_pacientes(session, total_populacao):
     session.add_all(pacientes)
     session.commit()
 
+# População de clínicas
 def populate_clinicas(session):
     """Popula clínicas no banco de dados."""
     clinicas = [
@@ -163,6 +170,7 @@ def populate_clinicas(session):
     session.add_all(clinicas)
     session.commit()
 
+# Função para adicionar médicos a uma clínica
 def add_medicos(clinica, medicos, qtd_clinicos, qtd_especialistas, especialidades):
     """Adiciona médicos para uma clínica."""
     # Adiciona clínicos gerais
@@ -171,7 +179,7 @@ def add_medicos(clinica, medicos, qtd_clinicos, qtd_especialistas, especialidade
             nome=fake.name(),
             especialidade='Clínico Geral',
             crm=fake.numerify(text='####/##'),
-            clinica=clinica  # Usa o relacionamento com a instância da clínica diretamente
+            id_clinica=clinica.id  # Usa o id da clínica
         )
         medicos.append(medico)
     
@@ -182,7 +190,7 @@ def add_medicos(clinica, medicos, qtd_clinicos, qtd_especialistas, especialidade
             nome=fake.name(),
             especialidade=especialidade,
             crm=fake.numerify(text='####/##'),
-            clinica=clinica  # Usa o relacionamento com a instância da clínica diretamente
+            id_clinica=clinica.id  # Usa o id da clínica
         )
         medicos.append(medico)
 
@@ -206,6 +214,26 @@ def populate_medicos(session):
     session.add_all(medicos)
     session.commit()
 
+# População de agendamentos
+def populate_agendamentos(session, pacientes, medicos, num_agendamentos=10):
+    """Popula a tabela de agendamentos com múltiplos agendamentos para cada paciente."""
+    agendamentos = []
+    for paciente in pacientes:
+        for _ in range(num_agendamentos):
+            medico = random.choice(medicos)
+            data_hora = fake.date_time_this_year() + timedelta(days=random.randint(1, 30))
+            agendamento = Agendamento(
+                paciente_id=paciente.id,
+                medico_id=medico.id,
+                data_hora=data_hora,
+                status_conclusao=random.choice(["agendado", "cancelado", "finalizado"])
+            )
+            agendamentos.append(agendamento)
+    session.add_all(agendamentos)
+    session.commit()
+    logging.info(f"Total de Agendamentos: {session.query(Agendamento).count()}")
+    
+# População de profissionais de saúde
 def populate_profissionais_saude(session):
     """Popula profissionais de saúde (enfermeiros e técnicos de enfermagem)."""
     profissionais = [
@@ -215,29 +243,75 @@ def populate_profissionais_saude(session):
     session.add_all(profissionais)
     session.commit()
 
-def populate_data(session):
-    """Popula o banco de dados com dados fictícios e reais baseados nos requisitos."""
+# População de atendimentos pulados
+def populate_atendimento_pulado(session):
+    """Popula a tabela atendimentos_pulados com registros de agendamentos não concluídos."""
+    atendimentos_pulados = []
+    agendamentos = session.query(Agendamento).filter(Agendamento.status_conclusao == "cancelado").all()
     
-    # Limpar tabelas antes da inserção para evitar duplicidade em testes contínuos
-    reset_database(session)
+    for agendamento in agendamentos:
+        atendimento_pulado = AtendimentoPulado(
+            id_paciente=agendamento.paciente_id,
+            id_bairro=random.choice(session.query(Bairro).all()).id,
+            id_doenca=random.choice(session.query(Doenca).all()).id,
+            motivo="Agendamento cancelado",
+            data_tentativa=agendamento.data_hora
+        )
+        atendimentos_pulados.append(atendimento_pulado)
 
-    logging.info("Populando doenças...")
-    populate_doencas(session)
+    session.add_all(atendimentos_pulados)
+    session.commit()
+    logging.info(f"Total de Atendimentos Pulados: {session.query(AtendimentoPulado).count()}")
+
+# População de atendimentos profissionais
+def populate_atendimento_profissional(session):
+    """Popula a tabela de atendimento_profissional com dados baseados em agendamentos."""
+    atendimentos_profissionais = []
+    agendamentos = session.query(Agendamento).all()
     
-    logging.info("Populando bairros...")
+    for agendamento in agendamentos:
+        if agendamento.status_conclusao == "finalizado":  # Apenas para agendamentos finalizados
+            status_opcoes = ["concluído", "em andamento", "cancelado"]
+            conclusao = fake.sentence()
+            
+            # Lógica adicional para status de conclusão mais realista
+            if random.random() < 0.1:  # Probabilidade de 10% de óbito
+                status = "óbito"
+                conclusao += " Paciente faleceu durante o atendimento."
+            else:
+                status = random.choice(status_opcoes)
+                if status == "concluído":
+                    conclusao += " Atendimento foi finalizado com sucesso."
+                elif status == "em andamento":
+                    conclusao += " Atendimento ainda em andamento."
+
+            atendimento = AtendimentoProfissional(
+                id_atendimento=agendamento.id,  # Corrigido para usar id_atendimento
+                id_profissional=random.choice(session.query(ProfissionalSaude).all()).id,
+                funcao="Consulta"
+            )
+            atendimentos_profissionais.append(atendimento)
+
+    session.add_all(atendimentos_profissionais)
+    session.commit()
+    logging.info(f"Total de Atendimentos Profissionais: {session.query(AtendimentoProfissional).count()}")
+
+# Função principal de população
+def populate_database(session):
+    """Popula o banco de dados inteiro."""
+    reset_database(session)
     populate_bairros(session)
-    
-    total_populacao = sum(bairro.pop_total for bairro in session.query(Bairro).all())
-    logging.info(f"Populando pacientes para {total_populacao} pessoas...")
-    populate_pacientes(session, total_populacao)
-    
-    logging.info("Populando clínicas...")
+    populate_pacientes(session, total_populacao=100)
     populate_clinicas(session)
-    
-    logging.info("Populando médicos...")
     populate_medicos(session)
-    
-    logging.info("Populando profissionais de saúde...")
+    populate_doencas(session)
+
+    # Obter dados de pacientes e médicos após criação
+    pacientes = session.query(Paciente).all()
+    medicos = session.query(Medico).all()
+    populate_agendamentos(session, pacientes, medicos)
     populate_profissionais_saude(session)
-    
-    logging.info("População de dados concluída com sucesso!")
+    populate_atendimento_profissional(session)
+    populate_atendimento_pulado(session)
+
+    logging.info("Banco de dados populado com sucesso!")

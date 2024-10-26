@@ -21,6 +21,7 @@ def calcular_taxa_mortalidade(populacao_bairro, taxa_mortalidade_bh, populacao_b
 taxa_mortalidade_bh = 0.00753  # Média de 0.753% de mortalidade
 populacao_bh = 2_416_339  # População de Belo Horizonte
 
+# Função para aplicar a taxa de mortalidade ajustada para cada bairro
 def aplicar_taxa_mortalidade_bairros(bairros):
     taxa_mortalidade_bairros = {}
     for bairro in bairros:
@@ -29,6 +30,7 @@ def aplicar_taxa_mortalidade_bairros(bairros):
         taxa_mortalidade_bairros[bairro.id] = taxa_mortalidade
     return taxa_mortalidade_bairros
 
+# Função para gerar um agendamento para o paciente
 def gerar_agendamento(session, paciente, clinica, doenca, motivo):
     """Cria um agendamento para o paciente, evitando duplicados."""
     if not session.query(Agendamento).filter_by(id_paciente=paciente.id, id_doenca=doenca.id, id_clinica=clinica.id).first():
@@ -125,6 +127,7 @@ def generate_atendimentos(session, qtd_atendimentos):
 
     logging.info(f"{atendimentos_gerados} atendimentos foram gerados com sucesso.")
 
+# Funções auxiliares para a geração de atendimentos
 def escolher_clinica(doenca, clinicas_publicas, clinicas_privadas):
     """Escolhe a clínica adequada para o atendimento baseado na gravidade da doença."""
     if doenca.gravidade in ['Muito Grave', 'Grave']:

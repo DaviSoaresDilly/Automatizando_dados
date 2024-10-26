@@ -34,12 +34,11 @@ def update_atendimento(session, atendimento_id, novos_dados):
 
     try:
         # Atualizando os atributos do atendimento
-        with session.begin():  # Garante o contexto de transação
-            for key, value in novos_dados.items():
-                if hasattr(atendimento, key):
-                    setattr(atendimento, key, value)
-                else:
-                    raise ValueError(f"O campo {key} não existe no modelo Atendimento.")
+        for key, value in novos_dados.items():
+            if hasattr(atendimento, key):
+                setattr(atendimento, key, value)
+            else:
+                raise ValueError(f"O campo {key} não existe no modelo Atendimento.")
         
         # Confirma as mudanças no banco de dados
         session.commit()
