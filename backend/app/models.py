@@ -2,6 +2,7 @@
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Date, Time
 from sqlalchemy.orm import relationship, declarative_base
 from datetime import datetime
+import json
 
 Base = declarative_base()
 
@@ -10,12 +11,20 @@ class Doenca(Base):
     id = Column(Integer, primary_key=True)
     nome = Column(String, nullable=False)
     especialista = Column(String, nullable=False)
-    sintomas = Column(String, nullable=False)
+    sintomas = Column(String, nullable=False)  # Armazenado como JSON
     gravidade = Column(String, nullable=False)
     requer_cirurgia = Column(Boolean, nullable=False)
 
+    # Construtor explícito
+    def __init__(self, nome, especialista, sintomas, requer_cirurgia, gravidade):
+        self.nome = nome
+        self.especialista = especialista
+        self.sintomas = json.dumps(sintomas)  # Converta a lista para JSON ao armazenar
+        self.requer_cirurgia = requer_cirurgia
+        self.gravidade = gravidade
+
     # Relacionamento com atendimentos
-    atendimentos = relationship('Atendimento', back_populates='doenca')
+    atendimentos = relationship("Atendimento", back_populates="doenca")
 
 
 class Bairro(Base):
@@ -54,6 +63,7 @@ class Clinica(Base):
 
     # Relacionamento com atendimentos
     atendimentos = relationship('Atendimento', back_populates='clinica')
+    medicos = relationship("Medico", back_populates="clinica")
 
 
 class Medico(Base):
@@ -61,10 +71,12 @@ class Medico(Base):
     id = Column(Integer, primary_key=True)
     nome = Column(String, nullable=False)
     especialidade = Column(String, nullable=False)
+    clinica_id = Column(Integer, ForeignKey("clinicas.id"))
     crm = Column(String, nullable=False)
 
     # Relacionamento com prontuários
     prontuarios = relationship('Prontuario', back_populates='medico')
+    clinica = relationship("Clinica", back_populates="medicos")
 
 
 class Atendimento(Base):

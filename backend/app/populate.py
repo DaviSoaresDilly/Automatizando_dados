@@ -1,27 +1,18 @@
 # app/populate.py
 import logging
-
-from pytest import Session
 from .models import Base, Doenca, Bairro, Paciente, Clinica, Medico, ProfissionalSaude
 from faker import Faker
 import random
+import json
 
 fake = Faker('pt_BR')
 
-def reset_database(session: Session) -> None:
+def reset_database(session):
     """Função para limpar as tabelas e resetar o banco de dados antes de inserir novos dados."""
-    meta = Base.metadata  # Acessa o metadata do Base
+    meta = Base.metadata
     for table in reversed(meta.sorted_tables):
         session.execute(table.delete())
     session.commit()
-
-class Doenca:
-    def __init__(self, nome, especialista, sintomas, requer_cirurgia, gravidade):
-        self.nome = nome
-        self.especialista = especialista
-        self.sintomas = sintomas
-        self.requer_cirurgia = requer_cirurgia
-        self.gravidade = gravidade
 
 class Especialidade:
     def __init__(self, nome):
@@ -38,19 +29,25 @@ class Especialidade:
                (gravidade is None or doenca.gravidade == gravidade)
         ]
 
-# Criando especialidades e adicionando doenças
+# Dicionário de especialidades
 especialidades = {
-    "Clínico Geral": Especialidade("Clínico Geral"),
-    "Pediatra": Especialidade("Pediatra"),
-    "Cardiologista": Especialidade("Cardiologista"),
-    "Ortopedista": Especialidade("Ortopedista"),
-    "Neurologista": Especialidade("Neurologista"),
-    "Dermatologista": Especialidade("Dermatologista"),
-    "Gastroenterologista": Especialidade("Gastroenterologista"),
-    "Oftalmologista": Especialidade("Oftalmologista"),
-    "Psiquiatra": Especialidade("Psiquiatra"),
-    "Endocrinologista": Especialidade("Endocrinologista")
+    "Pediatria": Especialidade("Pediatria"),
+    "Cardiologia": Especialidade("Cardiologia"),
+    "Ortopedia": Especialidade("Ortopedia"),
+    "Ginecologia": Especialidade("Ginecologia"),
+    "Dermatologia": Especialidade("Dermatologia"),
+    "Oftalmologia": Especialidade("Oftalmologia"),
+    "Neurologia": Especialidade("Neurologia"),
+    "Gastroenterologia": Especialidade("Gastroenterologia"),
+    "Psiquiatria": Especialidade("Psiquiatria"),
+    "Endocrinologia": Especialidade("Endocrinologia")
 }
+
+# Lista de especialidades para médicos que atendem em clínicas públicas
+especialidades_publico = ["Pediatria", "Cardiologia", "Ortopedia", "Ginecologia", "Dermatologia"]
+
+# Lista de especialidades para médicos que atendem em clínicas privadas
+especialidades_privado = ["Oftalmologia", "Neurologia", "Gastroenterologia", "Psiquiatria", "Endocrinologia"]
 
 # Lista de doenças por especialidade
 doencas = [
@@ -119,13 +116,12 @@ doencas = [
 
 # Adicionando as doenças às especialidades correspondentes
 for doenca in doencas:
-    especialidades[doenca.especialista].adicionar_doenca(doenca)
+    especialidade_nome = doenca.especialista
+    if especialidade_nome in especialidades:
+        especialidades[especialidade_nome].adicionar_doenca(doenca)
 
-# Exemplo de filtragem por doenças que requerem cirurgia e são de gravidade 'Grave' na especialidade 'Cardiologista'
-doencas_filtradas = especialidades['Cardiologista'].filtrar_doencas(requer_cirurgia=True, gravidade='Grave')
-for doenca in doencas_filtradas:
-    print(f"Doença: {doenca.nome}, Gravidade: {doenca.gravidade}")
-
+# Exemplo de acesso aos sintomas em formato de lista:
+sintomas_lista = json.loads(doenca.sintomas)
 
 def populate_doencas(session):
     """Popula doenças no banco de dados."""
@@ -169,14 +165,26 @@ def populate_clinicas(session):
 
 def add_medicos(clinica, medicos, qtd_clinicos, qtd_especialistas, especialidades):
     """Adiciona médicos para uma clínica."""
-    medicos += [
-        Medico(nome=fake.name(), especialidade='Clínico Geral', crm=fake.numerify(text='####/##'))
-        for _ in range(qtd_clinicos)
-    ]
-    medicos += [
-        Medico(nome=fake.name(), especialidade=random.choice(especialidades), crm=fake.numerify(text='####/##'))
-        for _ in range(qtd_especialistas)
-    ]
+    # Adiciona clínicos gerais
+    for _ in range(qtd_clinicos):
+        medico = Medico(
+            nome=fake.name(),
+            especialidade='Clínico Geral',
+            crm=fake.numerify(text='####/##'),
+            clinica=clinica  # Usa o relacionamento com a instância da clínica diretamente
+        )
+        medicos.append(medico)
+    
+    # Adiciona especialistas
+    for _ in range(qtd_especialistas):
+        especialidade = random.choice(especialidades)
+        medico = Medico(
+            nome=fake.name(),
+            especialidade=especialidade,
+            crm=fake.numerify(text='####/##'),
+            clinica=clinica  # Usa o relacionamento com a instância da clínica diretamente
+        )
+        medicos.append(medico)
 
 def populate_medicos(session):
     """Popula médicos no banco de dados, separando por público e privado."""
