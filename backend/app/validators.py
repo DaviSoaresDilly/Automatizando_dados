@@ -1,4 +1,5 @@
 # app/validators.py
+
 def validar_dados_atendimento(data):
     """
     Valida os dados do atendimento, verificando a presença e consistência das informações.
