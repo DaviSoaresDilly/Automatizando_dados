@@ -2,7 +2,7 @@
 import matplotlib.pyplot as plt
 import pandas as pd
 
-def plot_atendimentos_por_clinica(df: pd.DataFrame):
+def plot_atendimentos_por_clinica(df: pd.DataFrame, save_path: str = None):
     """
     Gera um gráfico de barras com a quantidade de atendimentos por clínica.
     """
@@ -12,9 +12,11 @@ def plot_atendimentos_por_clinica(df: pd.DataFrame):
     plt.xlabel("Número de Atendimentos")
     plt.ylabel("Clínica")
     plt.title("Atendimentos por Clínica")
+    if save_path:
+        plt.savefig(save_path)
     plt.show()
 
-def plot_grupo_risco_atendimentos(session):
+def plot_grupo_risco_atendimentos(session, save_path: str = None):
     """
     Gera um gráfico de pizza com a proporção de atendimentos de pacientes em grupo de risco.
     """
@@ -32,4 +34,6 @@ def plot_grupo_risco_atendimentos(session):
     plt.figure(figsize=(7, 7))
     plt.pie(sizes, explode=explode, labels=labels, colors=colors, autopct='%1.1f%%', startangle=140)
     plt.title("Proporção de Atendimentos para Grupo de Risco")
+    if save_path:
+        plt.savefig(save_path)
     plt.show()

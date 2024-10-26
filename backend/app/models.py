@@ -71,6 +71,9 @@ class Medico(Base):
     prontuarios = relationship('Prontuario', back_populates='medico')
     clinica = relationship('Clinica', back_populates='medicos')
 
+    # Relacionamento com atendimentos
+    atendimentos = relationship('Atendimento', back_populates='medico')
+
 class Atendimento(Base):
     __tablename__ = 'atendimentos'
     id = Column(Integer, primary_key=True)
@@ -78,6 +81,7 @@ class Atendimento(Base):
     id_bairro = Column(Integer, ForeignKey('bairros.id'), nullable=False)
     id_doenca = Column(Integer, ForeignKey('doencas.id'), nullable=False)
     id_clinica = Column(Integer, ForeignKey('clinicas.id'), nullable=False)
+    id_medico = Column(Integer, ForeignKey('medicos.id'), nullable=False)
     data_atendimento = Column(Date, nullable=False)
     status = Column(String, nullable=False)
     hora_atendimento = Column(Time, nullable=False)
@@ -88,6 +92,7 @@ class Atendimento(Base):
     bairro = relationship('Bairro', back_populates='atendimentos')
     doenca = relationship('Doenca', back_populates='atendimentos')
     clinica = relationship('Clinica', back_populates='atendimentos')
+    medico = relationship('Medico', back_populates='atendimentos')
 
 class Prontuario(Base):
     __tablename__ = 'prontuarios'

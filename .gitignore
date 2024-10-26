@@ -163,3 +163,11 @@ cython_debug/
 
 # Database files
 *.db
+*.csv
+*.pdf
+*.xls
+*.xlsx
+*.png
+*.jpg
+*.jpeg
+*.gif

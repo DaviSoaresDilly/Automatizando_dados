@@ -1,11 +1,16 @@
 # app/reports/generate_reports.py
+import sys
+import os
 import pandas as pd
-from sqlalchemy.orm import Session
-from ..models import Atendimento, Clinica
+import matplotlib.pyplot as plt
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 
-import pandas as pd
+from sqlalchemy import func
 from sqlalchemy.orm import Session
-from ..models import Atendimento, Clinica, Paciente, Doenca, Bairro
+from app.models import Atendimento, Clinica, Medico, Paciente, Doenca, Bairro
+from datetime import datetime
+from app.database import get_session, create_app
+from app.reports.visualize import plot_atendimentos_por_clinica, plot_grupo_risco_atendimentos
 
 # Função existente: Relatório de atendimentos por clínica
 def generate_atendimentos_report(session: Session) -> pd.DataFrame:
@@ -53,16 +58,46 @@ def generate_demographic_report(session: Session) -> pd.DataFrame:
 
     # Análise por faixa etária e sexo
     df['Faixa Etária'] = pd.cut(df['Idade'], bins=[0, 12, 18, 40, 60, 100], labels=['Criança', 'Adolescente', 'Adulto', 'Meia-Idade', 'Idoso'])
-    analise_por_faixa = df.groupby(['Faixa Etária', 'Sexo', 'Doenca']).size().reset_index(name='Incidências')
+    analise_por_faixa = df.groupby(['Faixa Etária', 'Sexo', 'Doenca'], observed=False).size().reset_index(name='Incidências')
 
     return analise_por_faixa
 
-# Funções de exportação (CSV e PDF) para qualquer DataFrame gerado
-def export_report_to_csv(df: pd.DataFrame, filename: str):
-    df.to_csv(filename, index=False)
+# Função nova: Relatório de atendimentos por médico
+def generate_atendimentos_por_medico_report(session: Session) -> pd.DataFrame:
+    """
+    Gera um relatório de atendimentos por médico.
+    """
+    query = session.query(
+        Medico.nome.label('Medico'),
+        Medico.especialidade.label('Especialidade'),
+        func.count(Atendimento.id).label('Total_Atendimentos')
+    ).join(Atendimento, Medico.id == Atendimento.id_medico)\
+     .group_by(Medico.id)\
+     .all()
 
-def export_report_to_pdf(df: pd.DataFrame, filename: str):
+    dados = [{
+        'Medico': row[0],
+        'Especialidade': row[1],
+        'Total Atendimentos': row[2]
+    } for row in query]
+
+    df = pd.DataFrame(dados)
+    return df
+
+# Funções de exportação (CSV e PDF) para qualquer DataFrame gerado
+def export_report_to_csv(df: pd.DataFrame, filename: str, output_dir: str = './reports'):
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+    filepath = os.path.join(output_dir, filename)
+    df.to_csv(filepath, index=False)
+    print(f"Relatório salvo em: {filepath}")
+
+def export_report_to_pdf(df: pd.DataFrame, filename: str, output_dir: str = './reports'):
     from fpdf import FPDF
+
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+    filepath = os.path.join(output_dir, filename)
 
     pdf = FPDF()
     pdf.add_page()
@@ -73,4 +108,31 @@ def export_report_to_pdf(df: pd.DataFrame, filename: str):
         linha = ' | '.join([f"{col}: {str(row[col])}" for col in df.columns])
         pdf.cell(200, 10, txt=linha, ln=True)
 
-    pdf.output(filename)
+    pdf.output(filepath)
+    print(f"Relatório salvo em: {filepath}")
+
+# Exemplo de uso das funções
+if __name__ == "__main__":
+    app = create_app()  # Crie a aplicação Flask
+    with app.app_context():  # Ative o contexto da aplicação
+        session = get_session()
+
+        # Gerar e exportar relatório de atendimentos por clínica
+        df_atendimentos = generate_atendimentos_report(session)
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        export_report_to_csv(df_atendimentos, f'atendimentos_report_{timestamp}.csv')
+        export_report_to_pdf(df_atendimentos, f'atendimentos_report_{timestamp}.pdf')
+        plot_atendimentos_por_clinica(df_atendimentos, f'./reports/atendimentos_por_clinica_{timestamp}.png')
+
+        # Gerar e exportar relatório demográfico
+        df_demografico = generate_demographic_report(session)
+        export_report_to_csv(df_demografico, f'demographic_report_{timestamp}.csv')
+        export_report_to_pdf(df_demografico, f'demographic_report_{timestamp}.pdf')
+
+        # Gerar e exportar relatório de atendimentos por médico
+        df_atendimentos_medico = generate_atendimentos_por_medico_report(session)
+        export_report_to_csv(df_atendimentos_medico, f'atendimentos_por_medico_report_{timestamp}.csv')
+        export_report_to_pdf(df_atendimentos_medico, f'atendimentos_por_medico_report_{timestamp}.pdf')
+
+        # Gerar gráfico de grupo de risco
+        plot_grupo_risco_atendimentos(session, f'./reports/grupo_risco_atendimentos_{timestamp}.png')

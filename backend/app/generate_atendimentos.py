@@ -96,6 +96,7 @@ def generate_atendimentos(session, qtd_atendimentos):
             id_bairro=bairro.id,
             id_doenca=doenca.id,
             id_clinica=clinica.id,
+            id_medico=medico.id,
             data_atendimento=data_atendimento.date(),
             status=status,
             hora_atendimento=hora_atendimento,
