@@ -34,7 +34,7 @@ def main():
         populate_database(session)
 
         # Geração de atendimentos (simulação com ID)
-        generate_atendimentos(session, 43875)
+        generate_atendimentos(session, 12345)
 
         # Fechar a sessão do banco de dados
         session.close()

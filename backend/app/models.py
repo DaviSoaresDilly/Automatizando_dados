@@ -33,6 +33,7 @@ class Bairro(Base):
 
     # Relacionamento com atendimentos
     atendimentos = relationship("Atendimento", back_populates="bairro")
+    pacientes = relationship('Paciente', back_populates='bairro')
 
 class Paciente(Base):
     __tablename__ = 'pacientes'
@@ -41,9 +42,11 @@ class Paciente(Base):
     idade = Column(Integer, nullable=False)
     sexo = Column(String(1), nullable=False)
     endereco = Column(Text, nullable=False)
+    id_bairro = Column(Integer, ForeignKey('bairros.id'), nullable=False)
     telefone = Column(String(20), nullable=False)
 
     # Relacionamento com atendimentos
+    bairro = relationship('Bairro', back_populates='pacientes')
     atendimentos = relationship('Atendimento', back_populates='paciente')
     prontuarios = relationship('Prontuario', back_populates='paciente')
 

@@ -137,25 +137,36 @@ def populate_bairros(session):
     """Popula bairros no banco de dados."""
     bairros = [
         Bairro(nome='Santa Tereza', pop_total=22808, infra_saude='1 centro de saúde, 1 UPA, 2 clínicas particulares'),
-        Bairro(nome='Horto', pop_total=4360, infra_saude='1 centro de saúde, 1 UPA, 2 clínicas particulares')
+        Bairro(nome='Horto', pop_total=4360, infra_saude='1 centro de saúde, 1 UPA, 2 clínicas particulares'),
+        Bairro(nome='Sagrada familia', pop_total=34395, infra_saude='1 centro de saúde, 1 UPA, 2 clínicas particulares'),
+        Bairro(nome='Horto Florestal', pop_total=7920, infra_saude='1 centro de saúde, 1 UPA, 2 clínicas particulares'),
+        Bairro(nome='Colegio Batista', pop_total=3212, infra_saude='1 centro de saúde, 1 UPA, 2 clínicas particulares'),
+        Bairro(nome='Floresta', pop_total=5326, infra_saude='1 centro de saúde, 1 UPA, 2 clínicas particulares'),
+        Bairro(nome='Esplanada', pop_total=10012, infra_saude='1 centro de saúde, 1 UPA, 2 clínicas particulares'),
+        Bairro(nome='Pompeia', pop_total=9876, infra_saude='1 centro de saúde, 1 UPA, 2 clínicas particulares'),
     ]
     session.add_all(bairros)
     session.commit()
 
 # População de pacientes
-def populate_pacientes(session, total_populacao):
-    """Popula pacientes no banco de dados."""
-    pacientes = [
-        Paciente(
-            nome=fake.name(),
-            idade=fake.random_int(min=1, max=100),
-            sexo=fake.random_element(elements=('M', 'F')),
-            endereco=fake.address(),
-            telefone=fake.phone_number()
-        )
-        for _ in range(total_populacao)
-    ]
-    session.add_all(pacientes)
+def populate_pacientes(session):
+    """Popula pacientes no banco de dados com distribuição por bairro e uma chance de 4% para pacientes de outros bairros."""
+    bairros = session.query(Bairro).all()
+
+    for bairro in bairros:
+        for _ in range(bairro.pop_total):
+            # 0.4% de chance para o paciente vir de outro bairro
+            bairro_origem = bairro if random.random() > 0.004 else random.choice(bairros)
+            paciente = Paciente(
+                nome=fake.name(),
+                idade=fake.random_int(min=1, max=100),
+                sexo=fake.random_element(elements=('M', 'F')),
+                endereco=fake.address(),
+                telefone=fake.phone_number(),
+                id_bairro=bairro_origem.id
+            )
+            session.add(paciente)
+
     session.commit()
 
 # População de clínicas
@@ -172,14 +183,14 @@ def populate_clinicas(session):
 
 # Função para adicionar médicos a uma clínica
 def add_medicos(clinica, medicos, qtd_clinicos, qtd_especialistas, especialidades):
-    """Adiciona médicos para uma clínica."""
+    """Adiciona médicos para uma clínica específica com base na quantidade de clínicos gerais e especialistas."""
     # Adiciona clínicos gerais
     for _ in range(qtd_clinicos):
         medico = Medico(
             nome=fake.name(),
             especialidade='Clínico Geral',
             crm=fake.numerify(text='####/##'),
-            id_clinica=clinica.id  # Usa o id da clínica
+            id_clinica=clinica.id
         )
         medicos.append(medico)
     
@@ -190,32 +201,37 @@ def add_medicos(clinica, medicos, qtd_clinicos, qtd_especialistas, especialidade
             nome=fake.name(),
             especialidade=especialidade,
             crm=fake.numerify(text='####/##'),
-            id_clinica=clinica.id  # Usa o id da clínica
+            id_clinica=clinica.id
         )
         medicos.append(medico)
 
 def populate_medicos(session):
-    """Popula médicos no banco de dados, separando por público e privado."""
+    """Popula médicos no banco de dados para clínicas públicas e privadas."""
     medicos = []
     clinicas = session.query(Clinica).all()
+
+    # Define especialidades para clínicas públicas e privadas
+    especialidades_publico = ["Pediatria", "Cardiologia", "Ortopedia", "Ginecologia", "Dermatologia"]
+    especialidades_privado = ["Oftalmologia", "Neurologia", "Gastroenterologia", "Psiquiatria", "Endocrinologia"]
 
     for clinica in clinicas:
         if clinica.tipo == 'Pública':
             if 'UPA' in clinica.nome:
-                # UPA: 10 clínicos gerais, 5 especialistas
-                add_medicos(clinica, medicos, 10, 5, especialidades_publico)
+                # UPA: 10 clínicos gerais e 5 especialistas
+                add_medicos(clinica, medicos, qtd_clinicos=6, qtd_especialistas=2, especialidades=especialidades_publico)
             elif 'Centro de Saúde' in clinica.nome:
-                # Centro de Saúde: 4 clínicos gerais, 1 pediatra
-                add_medicos(clinica, medicos, 4, 1, ['Pediatria'])
+                # Centro de Saúde: 4 clínicos gerais e 1 pediatra
+                add_medicos(clinica, medicos, qtd_clinicos=4, qtd_especialistas=1, especialidades=["Pediatria"])
         else:
-            # Clínicas privadas: 5 especialistas por clínica, escolhidos aleatoriamente entre especialidades privadas
-            add_medicos(clinica, medicos, 0, 5, especialidades_privado)
+            # Clínicas privadas: 5 especialistas, selecionados aleatoriamente entre as especialidades privadas
+            add_medicos(clinica, medicos, qtd_clinicos=0, qtd_especialistas=5, especialidades=especialidades_privado)
 
+    # Salva todos os médicos gerados na sessão do banco de dados
     session.add_all(medicos)
     session.commit()
 
 # População de agendamentos
-def populate_agendamentos(session, pacientes, medicos, num_agendamentos=10):
+def populate_agendamentos(session, pacientes, medicos, num_agendamentos=5):
     """Popula a tabela de agendamentos com múltiplos agendamentos para cada paciente."""
     agendamentos = []
     for paciente in pacientes:
@@ -301,7 +317,7 @@ def populate_database(session):
     """Popula o banco de dados inteiro."""
     reset_database(session)
     populate_bairros(session)
-    populate_pacientes(session, total_populacao=100)
+    populate_pacientes(session)
     populate_clinicas(session)
     populate_medicos(session)
     populate_doencas(session)
