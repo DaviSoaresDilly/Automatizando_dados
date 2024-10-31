@@ -1,42 +1,16 @@
 # app/reports/visualize.py
+
+import os
 import matplotlib.pyplot as plt
+import seaborn as sns
 import pandas as pd
 
-def plot_atendimentos_por_clinica(df: pd.DataFrame, save_path: str = None):
+def ensure_output_dir(output_dir: str):
     """
-    Gera um gráfico de barras com a quantidade de atendimentos por clínica.
+    Garante que o diretório de saída exista.
     """
-    df = df.sort_values(by='Total Atendimentos', ascending=False)
-    plt.figure(figsize=(10, 6))
-    plt.barh(df['Clinica'], df['Total Atendimentos'], color='teal')
-    plt.xlabel("Número de Atendimentos")
-    plt.ylabel("Clínica")
-    plt.title("Atendimentos por Clínica")
-    if save_path:
-        plt.savefig(save_path)
-    plt.show()
-
-def plot_grupo_risco_atendimentos(session, save_path: str = None):
-    """
-    Gera um gráfico de pizza com a proporção de atendimentos de pacientes em grupo de risco.
-    """
-    from app.models import Paciente, Atendimento
-
-    atendimentos = session.query(Atendimento).all()
-    total_grupo_risco = sum(1 for a in atendimentos if a.paciente.idade >= 60 or 'Gestante' in a.paciente.sexo)
-    total_outros = len(atendimentos) - total_grupo_risco
-
-    labels = ['Grupo de Risco', 'Outros']
-    sizes = [total_grupo_risco, total_outros]
-    colors = ['#ff9999','#66b3ff']
-    explode = (0.1, 0)
-
-    plt.figure(figsize=(7, 7))
-    plt.pie(sizes, explode=explode, labels=labels, colors=colors, autopct='%1.1f%%', startangle=140)
-    plt.title("Proporção de Atendimentos para Grupo de Risco")
-    if save_path:
-        plt.savefig(save_path)
-    plt.show()
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
 
 def plot_ocupacao_historico_previsao(df_historico: pd.DataFrame, df_previsao: pd.DataFrame, clinica_nome: str):
     """
@@ -52,7 +26,54 @@ def plot_ocupacao_historico_previsao(df_historico: pd.DataFrame, df_previsao: pd
     plt.legend(loc="upper left")
     plt.grid(True)
     
-    output_path = f"./reports/ocupacao_previsao_{clinica_nome.replace(' ', '_')}.png"
+    output_dir = "./reports"
+    ensure_output_dir(output_dir)
+    output_path = os.path.join(output_dir, f"ocupacao_previsao_{clinica_nome.replace(' ', '_')}.png")
     plt.savefig(output_path)
+    plt.show()
+    print(f"Gráfico salvo em: {output_path}")
+
+def plot_distribution_by_age_gender(df_distribuicao: pd.DataFrame):
+    """
+    Gera um gráfico de barras para mostrar a distribuição de doenças por faixa etária e sexo.
+    """
+    plt.figure(figsize=(12, 8))
+    sns.barplot(data=df_distribuicao, x='Faixa Etária', y='Incidências', hue='Sexo', errorbar=None)  # Atualizado para errorbar=None
+    
+    plt.title("Distribuição de Doenças por Faixa Etária e Sexo")
+    plt.xlabel("Faixa Etária")
+    plt.ylabel("Número de Incidências")
+    plt.legend(title="Sexo")
+    plt.xticks(rotation=45)
+    plt.grid(True, axis='y', linestyle='--', linewidth=0.7)
+    plt.tight_layout()
+
+    output_dir = "./reports"
+    ensure_output_dir(output_dir)
+    output_path = os.path.join(output_dir, "distribuicao_faixa_etaria_sexo.png")
+    plt.savefig(output_path)
+    plt.show()
+    print(f"Gráfico salvo em: {output_path}")
+
+def plot_doenca_por_bairro(df_doenca_bairro: pd.DataFrame):
+    """
+    Gera e salva um gráfico de barras da quantidade de doenças por bairro.
+    """
+    plt.figure(figsize=(14, 10))
+    
+    sns.barplot(data=df_doenca_bairro, x='Doença', y='Quantidade', hue='Bairro', errorbar=None)  # Atualizado para errorbar=None
+    
+    plt.title('Quantidade de Doenças por Bairro')
+    plt.xlabel('Doença')
+    plt.ylabel('Quantidade de Incidências')
+    plt.legend(title='Bairro')
+    plt.xticks(rotation=45, ha='right')
+    plt.grid(True, axis='y', linestyle='--', linewidth=0.7)
+    plt.tight_layout()
+    
+    output_dir = "./reports"
+    ensure_output_dir(output_dir)
+    output_path = os.path.join(output_dir, "doenca_por_bairro.png")
+    plt.savefig(output_path)  # Salvar o gráfico antes de exibir
     plt.show()
     print(f"Gráfico salvo em: {output_path}")
