@@ -4,7 +4,7 @@ from sqlalchemy.orm import sessionmaker
 from datetime import date, timedelta
 import pandas as pd
 from statsmodels.tsa.arima.model import ARIMA
-from app.models import Atendimento, Clinica
+from aplication.models import Atendimento, Clinica
 
 # Configurar conexão com o banco de dados
 DATABASE_URL = "sqlite:///c:/Users/Davi/Documents/GitHub/Automatizando_dados/backend/instance/your_database.db"

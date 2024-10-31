@@ -1,7 +1,7 @@
 # tests/test_reports.py
 import pytest
-from app.database import create_app, get_session
-from app.reports.generate_reports import generate_atendimentos_report, export_report_to_csv, export_report_to_pdf
+from aplication.database import create_app, get_session
+from aplication.reports.generate_reports import generate_atendimentos_report, export_report_to_csv, export_report_to_pdf
 import os
 
 @pytest.fixture(scope='module')

@@ -10,10 +10,10 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
-from app.models import Atendimento, Clinica, Medico, Paciente, Doenca, Bairro
-from app.database import get_session, create_app
+from aplication.models import Atendimento, Clinica, Medico, Paciente, Doenca, Bairro
+from aplication.database import get_session, create_app
 from analyze_occupacao_arima import prever_ocupacao_arima, extrair_dados_ocupacao, calcular_ocupacao_media
-from app.reports.visualize import plot_ocupacao_historico_previsao, plot_distribution_by_age_gender
+from aplication.reports.visualize import plot_ocupacao_historico_previsao, plot_distribution_by_age_gender
 
 OUTPUT_DIR = './reports'
 

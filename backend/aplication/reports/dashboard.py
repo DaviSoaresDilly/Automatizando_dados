@@ -6,13 +6,13 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../.
 import streamlit as st
 import pandas as pd
 from sqlalchemy.orm import Session
-from app.database import get_session, create_app
-from app.reports.generate_reports import (
+from aplication.database import get_session, create_app
+from aplication.reports.generate_reports import (
     generate_occupacao_report,
     generate_age_gender_distribution_report,
     generate_doenca_por_bairro_report
 )
-from app.reports.visualize import (
+from aplication.reports.visualize import (
     plot_ocupacao_historico_previsao,
     plot_distribution_by_age_gender,
     plot_doenca_por_bairro
