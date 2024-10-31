@@ -2,8 +2,8 @@
 import pytest
 import time
 import psutil
-from aplication.database import create_app, get_session
-from aplication.generate_atendimentos import generate_atendimentos
+from application.database import create_app, get_session
+from application.generate_atendimentos import generate_atendimentos
 
 @pytest.fixture(scope='module')
 def app():

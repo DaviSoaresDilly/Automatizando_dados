@@ -1,8 +1,8 @@
 # tests/test_update.py
 import pytest
-from aplication.database import create_app, get_session
-from aplication.base_de_dados.update_data import update_atendimento_status, update_paciente_info
-from aplication.models import Atendimento, Paciente
+from application.database import create_app, get_session
+from application.base_de_dados.update_data import update_atendimento_status, update_paciente_info
+from application.models import Atendimento, Paciente
 
 @pytest.fixture(scope='module')
 def app():
@@ -14,7 +14,7 @@ def app():
 def session(app):
     session = get_session()
     # Inicialize o banco de dados e popule os dados necessários
-    from aplication.models import Base
+    from application.models import Base
     Base.metadata.create_all(session.get_bind())
     # Popule os dados necessários para o teste
     yield session

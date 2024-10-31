@@ -1,9 +1,9 @@
 # tests/test_database.py
 import pytest
-from aplication.database import create_app, get_session
-from aplication.populate import populate_data
-from aplication.generate_atendimentos import generate_atendimentos
-from aplication.models import Atendimento, Prontuario, Paciente, Clinica
+from application.database import create_app, get_session
+from application.populate import populate_data
+from application.generate_atendimentos import generate_atendimentos
+from application.models import Atendimento, Prontuario, Paciente, Clinica
 
 @pytest.fixture(scope='module')
 def app():

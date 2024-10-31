@@ -1,10 +1,10 @@
 # backend/main.py
 import logging
 from sqlalchemy import Engine
-from aplication.database import get_session, create_app
-from aplication.models import Base
-from aplication.populate import populate_database
-from aplication.generate_atendimentos import generate_atendimentos
+from application.database import get_session, create_app
+from application.models import Base
+from application.populate import populate_database
+from application.generate_atendimentos import generate_atendimentos
 
 # Configuração básica do logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')

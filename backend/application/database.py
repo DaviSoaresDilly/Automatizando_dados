@@ -2,7 +2,7 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask import Flask
-from aplication.models import Atendimento
+from application.models import Atendimento
 
 # Inicializando SQLAlchemy
 db = SQLAlchemy()

@@ -1,8 +1,8 @@
 # tests/test_exceptions.py
 import pytest
 from sqlalchemy.exc import IntegrityError
-from aplication.database import create_app, get_session
-from aplication.models import Atendimento, Paciente
+from application.database import create_app, get_session
+from application.models import Atendimento, Paciente
 
 @pytest.fixture(scope='module')
 def app():
