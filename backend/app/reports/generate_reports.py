@@ -2,137 +2,131 @@
 import sys
 import os
 import pandas as pd
-import matplotlib.pyplot as plt
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
-
 from sqlalchemy import func
 from sqlalchemy.orm import Session
+from datetime import datetime, date, timedelta
+import matplotlib.pyplot as plt
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 from app.models import Atendimento, Clinica, Medico, Paciente, Doenca, Bairro
-from datetime import datetime
 from app.database import get_session, create_app
-from app.reports.visualize import plot_atendimentos_por_clinica, plot_grupo_risco_atendimentos
+from analyze_occupacao_arima import prever_ocupacao_arima, extrair_dados_ocupacao, calcular_ocupacao_media
+from app.reports.visualize import plot_ocupacao_historico_previsao, plot_atendimentos_por_clinica, plot_grupo_risco_atendimentos
 
-# Função existente: Relatório de atendimentos por clínica
-def generate_atendimentos_report(session: Session) -> pd.DataFrame:
-    atendimentos = session.query(Atendimento).all()
-    clinicas = session.query(Clinica).all()
+# Constantes
+OUTPUT_DIR = './reports'
 
-    data = []
-    for clinica in clinicas:
-        atendimentos_por_clinica = session.query(Atendimento).filter_by(id_clinica=clinica.id).count()
-        data.append({'Clinica': clinica.nome, 'Total Atendimentos': atendimentos_por_clinica})
+# Função para garantir o diretório de saída
+def ensure_output_dir():
+    if not os.path.exists(OUTPUT_DIR):
+        os.makedirs(OUTPUT_DIR)
 
-    df = pd.DataFrame(data)
-    return df
-
-# Função existente: Relatório paginado de atendimentos
-def generate_atendimentos_report_paginated(session, page: int = 1, per_page: int = 50) -> pd.DataFrame:
-    offset = (page - 1) * per_page
-    atendimentos = session.query(Atendimento).offset(offset).limit(per_page).all()
-
-    data = []
-    for atendimento in atendimentos:
-        data.append({'Clinica': atendimento.clinica.nome, 'Paciente': atendimento.paciente.nome, 'Status': atendimento.status})
-
-    df = pd.DataFrame(data)
-    return df
-
-# Função nova: Relatório demográfico com incidência de doenças por faixa etária e sexo
-def generate_demographic_report(session: Session) -> pd.DataFrame:
-    query = session.query(Paciente, Atendimento, Doenca, Bairro)\
-        .join(Atendimento, Paciente.id == Atendimento.id_paciente)\
-        .join(Doenca, Atendimento.id_doenca == Doenca.id)\
-        .join(Bairro, Atendimento.id_bairro == Bairro.id)\
-        .all()
-
-    dados = [{
-        'Paciente': paciente.nome,
-        'Idade': paciente.idade,
-        'Sexo': paciente.sexo,
-        'Doenca': doenca.nome,
-        'Gravidade': doenca.gravidade,
-        'Bairro': bairro.nome
-    } for paciente, atendimento, doenca, bairro in query]
-
-    df = pd.DataFrame(dados)
-
-    # Análise por faixa etária e sexo
-    df['Faixa Etária'] = pd.cut(df['Idade'], bins=[0, 12, 18, 40, 60, 100], labels=['Criança', 'Adolescente', 'Adulto', 'Meia-Idade', 'Idoso'])
-    analise_por_faixa = df.groupby(['Faixa Etária', 'Sexo', 'Doenca'], observed=False).size().reset_index(name='Incidências')
-
-    return analise_por_faixa
-
-# Função nova: Relatório de atendimentos por médico
-def generate_atendimentos_por_medico_report(session: Session) -> pd.DataFrame:
-    """
-    Gera um relatório de atendimentos por médico.
-    """
-    query = session.query(
-        Medico.nome.label('Medico'),
-        Medico.especialidade.label('Especialidade'),
-        func.count(Atendimento.id).label('Total_Atendimentos')
-    ).join(Atendimento, Medico.id == Atendimento.id_medico)\
-     .group_by(Medico.id)\
-     .all()
-
-    dados = [{
-        'Medico': row[0],
-        'Especialidade': row[1],
-        'Total Atendimentos': row[2]
-    } for row in query]
-
-    df = pd.DataFrame(dados)
-    return df
-
-# Funções de exportação (CSV e PDF) para qualquer DataFrame gerado
-def export_report_to_csv(df: pd.DataFrame, filename: str, output_dir: str = './reports'):
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-    filepath = os.path.join(output_dir, filename)
-    df.to_csv(filepath, index=False)
+# Função para exportar relatórios em CSV e PDF
+def export_to_file(df: pd.DataFrame, filename: str, fmt: str = 'csv'):
+    ensure_output_dir()
+    filepath = os.path.join(OUTPUT_DIR, f"{filename}.{fmt}")
+    if fmt == 'csv':
+        df.to_csv(filepath, index=False)
+    elif fmt == 'pdf':
+        from fpdf import FPDF
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", size=12)
+        pdf.cell(200, 10, txt="Relatório", ln=True, align='C')
+        for _, row in df.iterrows():
+            linha = ' | '.join([f"{col}: {row[col]}" for col in df.columns])
+            pdf.cell(200, 10, txt=linha, ln=True)
+        pdf.output(filepath)
     print(f"Relatório salvo em: {filepath}")
 
-def export_report_to_pdf(df: pd.DataFrame, filename: str, output_dir: str = './reports'):
-    from fpdf import FPDF
+# Função nova: Relatório de ocupação de leitos com previsão
+def generate_occupacao_report(session: Session, clinica_id: int, dias_previstos: int = 30) -> pd.DataFrame:
+    """
+    Gera um relatório de ocupação de leitos para uma clínica específica e realiza uma previsão para um período futuro.
+    """
+    clinica = session.query(Clinica).filter(Clinica.id == clinica_id).first()
+    if clinica is None:
+        raise ValueError(f"Clínica com ID {clinica_id} não encontrada.")
+    
+    data_fim = date.today()
+    data_inicio = data_fim - timedelta(days=180)  # Últimos 6 meses
+    df_ocupacao = extrair_dados_ocupacao(clinica_id, data_inicio, data_fim)
+    ocupacao_media_historica = calcular_ocupacao_media(df_ocupacao, clinica.capacidade_leito)
+    
+    # Previsão de ocupação
+    previsao_df = prever_ocupacao_arima(clinica_id, dias_previstos)
+    
+    # Dados históricos para visualização
+    historico_df = pd.DataFrame({
+        "data": ocupacao_media_historica.index,
+        "ocupacao": ocupacao_media_historica.values
+    })
+    
+    # Visualização
+    plot_ocupacao_historico_previsao(historico_df, previsao_df, clinica.nome)
+    
+    # Combinação de dados para o relatório final
+    relatorio_df = pd.concat([historico_df.set_index("data"), previsao_df.set_index("data")], axis=1)
+    relatorio_df.columns = ["Ocupação Histórica", "Ocupação Prevista"]
+    relatorio_df.reset_index(inplace=True)
+    
+    return relatorio_df
 
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-    filepath = os.path.join(output_dir, filename)
+# Função nova: Relatório de maior quantidade de doenças por bairro
+def generate_doenca_por_bairro_report(session: Session) -> pd.DataFrame:
+    """
+    Gera um relatório da maior quantidade de doenças por bairro.
+    """
+    # Consulta para obter a quantidade de doenças por bairro
+    query = (
+        session.query(Bairro.nome.label('Bairro'), Doenca.nome.label('Doença'), func.count(Atendimento.id).label('Quantidade'))
+        .join(Atendimento, Atendimento.id_bairro == Bairro.id)
+        .join(Doenca, Atendimento.id_doenca == Doenca.id)
+        .group_by(Bairro.nome, Doenca.nome)
+        .order_by(Bairro.nome, func.count(Atendimento.id).desc())
+    )
+    
+    # Conversão dos resultados para DataFrame
+    df_doenca_por_bairro = pd.read_sql(query.statement, session.bind)
+    
+    # Visualização
+    plot_doenca_por_bairro(df_doenca_por_bairro)
+    
+    return df_doenca_por_bairro
 
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_font("Arial", size=12)
-    pdf.cell(200, 10, txt="Relatório", ln=True, align='C')
-
-    for index, row in df.iterrows():
-        linha = ' | '.join([f"{col}: {str(row[col])}" for col in df.columns])
-        pdf.cell(200, 10, txt=linha, ln=True)
-
-    pdf.output(filepath)
-    print(f"Relatório salvo em: {filepath}")
+# Função para plotar a quantidade de doenças por bairro
+def plot_doenca_por_bairro(df: pd.DataFrame):
+    """
+    Gera um gráfico de barras da quantidade de doenças por bairro.
+    """
+    plt.figure(figsize=(14, 10))
+    bairros = df['Bairro'].unique()
+    for bairro in bairros:
+        subset = df[df['Bairro'] == bairro]
+        plt.bar(subset['Doença'], subset['Quantidade'], label=bairro)
+    
+    plt.xlabel('Doença')
+    plt.ylabel('Quantidade')
+    plt.title('Quantidade de Doenças por Bairro')
+    plt.legend(title='Bairro')
+    plt.xticks(rotation=45, ha='right')
+    plt.tight_layout()
+    plt.show()
 
 # Exemplo de uso das funções
 if __name__ == "__main__":
-    app = create_app()  # Crie a aplicação Flask
-    with app.app_context():  # Ative o contexto da aplicação
+    app = create_app()  # Criação da aplicação Flask
+    with app.app_context():  # Ativação do contexto da aplicação
         session = get_session()
 
-        # Gerar e exportar relatório de atendimentos por clínica
-        df_atendimentos = generate_atendimentos_report(session)
+        # Gerar e exportar relatório de ocupação de leitos
+        clinica_id = 1  # ID da clínica de exemplo
+        dias_previstos = 30  # Período de previsão em dias
+        df_occupacao = generate_occupacao_report(session, clinica_id, dias_previstos)
+        
+        # Salvar o relatório em CSV e PDF
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        export_report_to_csv(df_atendimentos, f'atendimentos_report_{timestamp}.csv')
-        export_report_to_pdf(df_atendimentos, f'atendimentos_report_{timestamp}.pdf')
-        plot_atendimentos_por_clinica(df_atendimentos, f'./reports/atendimentos_por_clinica_{timestamp}.png')
-
-        # Gerar e exportar relatório demográfico
-        df_demografico = generate_demographic_report(session)
-        export_report_to_csv(df_demografico, f'demographic_report_{timestamp}.csv')
-        export_report_to_pdf(df_demografico, f'demographic_report_{timestamp}.pdf')
-
-        # Gerar e exportar relatório de atendimentos por médico
-        df_atendimentos_medico = generate_atendimentos_por_medico_report(session)
-        export_report_to_csv(df_atendimentos_medico, f'atendimentos_por_medico_report_{timestamp}.csv')
-        export_report_to_pdf(df_atendimentos_medico, f'atendimentos_por_medico_report_{timestamp}.pdf')
-
-        # Gerar gráfico de grupo de risco
-        plot_grupo_risco_atendimentos(session, f'./reports/grupo_risco_atendimentos_{timestamp}.png')
+        export_to_file(df_occupacao, f'occupacao_report_{clinica_id}_{timestamp}', 'csv')
+        export_to_file(df_occupacao, f'occupacao_report_{clinica_id}_{timestamp}', 'pdf')
+        
+        print(f"Relatório de ocupação de leitos gerado para a clínica com ID {clinica_id}.")

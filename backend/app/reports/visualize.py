@@ -37,3 +37,22 @@ def plot_grupo_risco_atendimentos(session, save_path: str = None):
     if save_path:
         plt.savefig(save_path)
     plt.show()
+
+def plot_ocupacao_historico_previsao(df_historico: pd.DataFrame, df_previsao: pd.DataFrame, clinica_nome: str):
+    """
+    Gera o gráfico da ocupação histórica e previsão futura de leitos para uma clínica.
+    """
+    plt.figure(figsize=(12, 6))
+    plt.plot(df_historico["data"], df_historico["ocupacao"], label="Histórico de Ocupação", color="blue", marker="o")
+    plt.plot(df_previsao["data"], df_previsao["ocupacao_prevista"], label="Previsão de Ocupação", color="red", linestyle="--", marker="x")
+    
+    plt.title(f"Previsão de Ocupação de Leitos - {clinica_nome}")
+    plt.xlabel("Data")
+    plt.ylabel("Taxa de Ocupação (%)")
+    plt.legend(loc="upper left")
+    plt.grid(True)
+    
+    output_path = f"./reports/ocupacao_previsao_{clinica_nome.replace(' ', '_')}.png"
+    plt.savefig(output_path)
+    plt.show()
+    print(f"Gráfico salvo em: {output_path}")
