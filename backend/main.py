@@ -7,7 +7,10 @@ from application.populate import populate_database
 from application.generate_atendimentos import generate_atendimentos
 
 # Configuração básica do logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
+
 
 def reset_database(engine: Engine):
     """Função para dropar e recriar todas as tabelas"""
@@ -16,6 +19,7 @@ def reset_database(engine: Engine):
 
     print("Criando novas tabelas...")
     Base.metadata.create_all(engine)  # Criar todas as tabelas
+
 
 def main():
     app = create_app()  # Crie a aplicação Flask
@@ -38,6 +42,7 @@ def main():
 
         # Fechar a sessão do banco de dados
         session.close()
+
 
 if __name__ == "__main__":
     main()

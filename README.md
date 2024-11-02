@@ -1,17 +1,50 @@
-# Automação e Análise de Dados Hospitalares
+## Automação e Análise de Dados Hospitalares
 
-### Projeto de Análise e Automação de Dados Hospitalares
+Projeto de Análise e Automação de Dados Hospitalares
 
 ## 🏥 Proposta do Projeto
 
-Este projeto foi desenvolvido para automatizar e analisar dados hospitalares, com foco em fornecer insights que ajudem no gerenciamento de ocupação de leitos, distribuição de doenças e monitoramento de incidência por faixa etária, gênero e localização. Utilizando técnicas de visualização e análise de séries temporais, o sistema oferece informações úteis para profissionais de saúde e gestores hospitalares, possibilitando uma visão abrangente do cenário de saúde em diferentes regiões.
+Este projeto foi desenvolvido para automatizar e analisar dados hospitalares, fornecendo insights essenciais para gestores e profissionais de saúde. A aplicação utiliza técnicas de ciência de dados para aprimorar a gestão hospitalar, especialmente no controle de ocupação de leitos, análise de incidência de doenças por faixa etária, gênero e localização, além de possibilitar a previsão de demandas futuras com base em dados históricos.
+
+## 🏗️ Construção do Projeto e Aplicação
+
+O projeto foi construído utilizando uma arquitetura modular, que facilita a escalabilidade e a manutenção. As principais etapas da construção do projeto incluem:
+
+- **Coleta e Armazenamento de Dados**: Os dados são coletados de diferentes fontes e armazenados em um banco de dados central (SQLite, mas compatível com outros bancos de dados). A pasta `base_de_dados` contém scripts que atualizam e validam esses dados antes de serem usados para análise.
+- **Análise de Dados**: A análise é conduzida utilizando bibliotecas de Python como Pandas para manipulação de dados e Statsmodels para modelagem de séries temporais (ARIMA). A análise é modular, dividida em componentes que processam dados demográficos, ocupação de leitos e incidência de doenças.
+- **Visualização de Dados**: Gráficos e dashboards são criados utilizando Matplotlib e Streamlit para permitir uma interpretação visual das informações. Esses componentes estão organizados na pasta `reports`, que inclui scripts para geração de gráficos e relatórios automáticos.
+- **Previsão de Ocupação**: O módulo de previsão utiliza modelos de séries temporais (ARIMA) para prever a ocupação de leitos. Essa previsão é essencial para o planejamento hospitalar e para evitar sobrecargas.
+- **Geração de Relatórios**: Relatórios em formatos PDF e CSV são gerados automaticamente e armazenados no diretório `reports`, permitindo fácil compartilhamento e análise posterior.
+- **Testes e Validação**: Uma suíte de testes foi implementada para garantir a robustez do sistema. Os testes estão na pasta `tests`, cobrindo desde a integridade do banco de dados até a geração de relatórios e desempenho das funções.
+
+## Aplicação Prática
+
+Este projeto é aplicável em cenários onde hospitais e clínicas precisam monitorar e prever a ocupação, além de entender melhor o perfil epidemiológico dos pacientes atendidos. Com base em dados históricos, o sistema permite tomar decisões informadas sobre alocação de recursos, planejamento de demanda e prevenção de surtos, especialmente em regiões com alta densidade populacional.
 
 ## 🔍 Principais Funcionalidades
 
-1. **Análise de Ocupação de Leitos**: Visualização da ocupação histórica e previsão para auxiliar na gestão de capacidade hospitalar.
-2. **Distribuição de Doenças por Faixa Etária e Gênero**: Análise demográfica que exibe a distribuição de doenças entre diferentes grupos etários e gêneros.
-3. **Distribuição de Doenças por Bairro**: Identifica as regiões mais afetadas e as doenças predominantes em cada área.
-4. **Geração de Relatórios**: Relatórios automáticos em formatos PDF e CSV, armazenados em um diretório específico para fácil acesso.
+- **Análise de Ocupação de Leitos**: Monitoramento histórico e previsão de ocupação.
+- **Distribuição de Doenças por Faixa Etária e Gênero**: Análise demográfica para identificar tendências.
+- **Distribuição de Doenças por Bairro**: Identificação de áreas com maior incidência de doenças.
+- **Geração de Relatórios**: Relatórios automáticos para acompanhamento e planejamento estratégico.
+
+## 📖 Fundamentos Teóricos
+
+### Análise de Dados em Saúde Pública
+
+A análise de dados em saúde pública envolve o processamento e a interpretação de grandes volumes de dados para identificar padrões e tendências. Isso inclui dados demográficos, histórico de ocupação, e registros de incidência de doenças. Esse tipo de análise é fundamental para:
+
+- **Prevenção de Surtos**: Identificar áreas com alta incidência de doenças e prever a expansão de surtos.
+- **Gestão de Recursos**: Otimizar a alocação de recursos hospitalares, como leitos, profissionais e equipamentos.
+- **Tomada de Decisões**: Fornecer dados para decisões estratégicas, especialmente em períodos de alta demanda ou pandemias.
+
+### Modelagem de Séries Temporais (ARIMA)
+
+A previsão de demanda de leitos é feita com o modelo ARIMA (AutoRegressive Integrated Moving Average). O ARIMA é amplamente usado em previsões de séries temporais, devido à sua capacidade de lidar com padrões de tendência e sazonalidade, essenciais para prever a ocupação hospitalar em períodos futuros. A implementação do modelo ajuda a antecipar a necessidade de recursos em picos de demanda, como períodos de aumento de doenças sazonais.
+
+### Visualização de Dados e Tomada de Decisões
+
+A visualização de dados é um aspecto crucial para facilitar a interpretação rápida de grandes volumes de informações. Gráficos e dashboards permitem que os gestores hospitalares identifiquem rapidamente mudanças nas taxas de ocupação ou picos de incidência de doenças. O projeto utiliza Matplotlib e Streamlit para criar visualizações interativas, tornando o processo de tomada de decisão mais eficiente.
 
 ## ⚙️ Estrutura do Projeto
 
@@ -27,11 +60,11 @@ A organização do projeto está estruturada da seguinte forma:
 │   │   ├── 📂 base_de_dados/
 │   │   │   └── update_data.py                # Atualização e manipulação de dados
 │   │   ├── 📂 reports/
-│   │   |   ├── analyze_occupacao_arima.py    # Previsão de ocupação com ARIMA
-│   │   |   ├── dashboard.py                  # Dashboard interativo (Streamlit)
-│   │   |   ├── generate_reports.py           # Geração de relatórios automáticos
-│   │   |   └── visualize.py                  # Visualização de dados
-|   |   ├── generate_atendimentos.py          # Geração de dados de atendimentos
+│   │   │   ├── analyze_occupacao_arima.py    # Previsão de ocupação com ARIMA
+│   │   │   ├── dashboard.py                  # Dashboard interativo (Streamlit)
+│   │   │   ├── generate_reports.py           # Geração de relatórios automáticos
+│   │   │   └── visualize.py                  # Visualização de dados
+│   │   ├── generate_atendimentos.py          # Geração de dados de atendimentos
 │   │   ├── database.py                       # Configuração do banco de dados
 │   │   ├── populate.py                       # Preenchimento inicial do banco de dados
 │   │   ├── models.py                         # Modelos de dados

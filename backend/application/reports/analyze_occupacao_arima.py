@@ -12,6 +12,7 @@ engine = create_engine(DATABASE_URL)
 Session = sessionmaker(bind=engine)
 session = Session()
 
+
 def extrair_dados_ocupacao(clinica_id: int, data_inicio: date, data_fim: date):
     """
     Extrai dados de ocupação de leitos para uma clínica específica dentro de um período de tempo.
@@ -25,13 +26,16 @@ def extrair_dados_ocupacao(clinica_id: int, data_inicio: date, data_fim: date):
         )
         .all()
     )
-    
+
     # Processar para DataFrame
-    df = pd.DataFrame([
-        {"data": atendimento.data_atendimento, "status": atendimento.status}
-        for atendimento in atendimentos
-    ])
+    df = pd.DataFrame(
+        [
+            {"data": atendimento.data_atendimento, "status": atendimento.status}
+            for atendimento in atendimentos
+        ]
+    )
     return df
+
 
 def calcular_ocupacao_media(df, capacidade_leito: int):
     """
@@ -40,6 +44,7 @@ def calcular_ocupacao_media(df, capacidade_leito: int):
     ocupacao_diaria = df.groupby("data").size()
     ocupacao_media = ocupacao_diaria / capacidade_leito
     return ocupacao_media
+
 
 def selecionar_melhor_arima(ocupacao_media):
     """
@@ -64,30 +69,36 @@ def selecionar_melhor_arima(ocupacao_media):
 
     return melhor_modelo, melhor_parametros
 
+
 def prever_ocupacao_arima(clinica_id: int, dias_previstos: int = 30):
     """
     Previsão de ocupação de leitos usando ARIMA para uma clínica específica com ajuste automático de parâmetros.
     """
     data_fim = date.today()
     data_inicio = data_fim - timedelta(days=180)
-    
+
     clinica = session.query(Clinica).filter(Clinica.id == clinica_id).first()
     if clinica is None:
         raise ValueError("Clínica não encontrada.")
-    
+
     df_ocupacao = extrair_dados_ocupacao(clinica_id, data_inicio, data_fim)
     ocupacao_media = calcular_ocupacao_media(df_ocupacao, clinica.capacidade_leito)
-    
+
     # Selecionar o melhor modelo ARIMA
     melhor_modelo, parametros = selecionar_melhor_arima(ocupacao_media)
     print(f"Melhores parâmetros ARIMA para a clínica {clinica_id}: {parametros}")
-    
+
     # Fazer previsão com o modelo selecionado
     forecast = melhor_modelo.forecast(steps=dias_previstos)
-    previsao_df = pd.DataFrame({"data": pd.date_range(start=data_fim, periods=dias_previstos, freq='D'),
-                                "ocupacao_prevista": forecast})
+    previsao_df = pd.DataFrame(
+        {
+            "data": pd.date_range(start=data_fim, periods=dias_previstos, freq="D"),
+            "ocupacao_prevista": forecast,
+        }
+    )
 
     return previsao_df
+
 
 if __name__ == "__main__":
     clinica_id = 1

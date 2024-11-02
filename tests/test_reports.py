@@ -1,14 +1,20 @@
 # tests/test_reports.py
 import pytest
 from application.database import create_app, get_session
-from application.reports.generate_reports import generate_atendimentos_report, export_report_to_csv, export_report_to_pdf
+from application.reports.generate_reports import (
+    generate_atendimentos_report,
+    export_report_to_csv,
+    export_report_to_pdf,
+)
 import os
 
-@pytest.fixture(scope='module')
+
+@pytest.fixture(scope="module")
 def app():
     app = create_app()
     with app.app_context():
         yield app
+
 
 @pytest.fixture
 def session(app):
@@ -16,11 +22,13 @@ def session(app):
     yield session
     session.close()
 
+
 def test_generate_report(session):
     df = generate_atendimentos_report(session)
     assert not df.empty
-    assert 'Clinica' in df.columns
-    assert 'Total Atendimentos' in df.columns
+    assert "Clinica" in df.columns
+    assert "Total Atendimentos" in df.columns
+
 
 def test_export_report_to_csv(session):
     df = generate_atendimentos_report(session)
@@ -28,6 +36,7 @@ def test_export_report_to_csv(session):
     export_report_to_csv(df, filename)
     assert os.path.exists(filename)
     os.remove(filename)
+
 
 def test_export_report_to_pdf(session):
     df = generate_atendimentos_report(session)

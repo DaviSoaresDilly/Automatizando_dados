@@ -3,12 +3,15 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from ..models import Atendimento, Paciente
 
+
 def update_atendimento_status(session: Session, atendimento_id: int, new_status: str):
     """
     Atualiza o status de um atendimento.
     """
     try:
-        atendimento = session.get(Atendimento, atendimento_id)  # Uso de get() para chave primária
+        atendimento = session.get(
+            Atendimento, atendimento_id
+        )  # Uso de get() para chave primária
         if atendimento:
             atendimento.status = new_status
             session.commit()
@@ -18,12 +21,17 @@ def update_atendimento_status(session: Session, atendimento_id: int, new_status:
         session.rollback()  # Reverte a transação em caso de erro
         return {"error": str(e)}
 
-def update_paciente_info(session: Session, paciente_id: int, nome: str = None, idade: int = None):
+
+def update_paciente_info(
+    session: Session, paciente_id: int, nome: str = None, idade: int = None
+):
     """
     Atualiza informações do paciente.
     """
     try:
-        paciente = session.get(Paciente, paciente_id)  # Uso de get() para chave primária
+        paciente = session.get(
+            Paciente, paciente_id
+        )  # Uso de get() para chave primária
         if paciente:
             if nome:
                 paciente.nome = nome

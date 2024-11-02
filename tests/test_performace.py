@@ -5,17 +5,20 @@ import psutil
 from application.database import create_app, get_session
 from application.generate_atendimentos import generate_atendimentos
 
-@pytest.fixture(scope='module')
+
+@pytest.fixture(scope="module")
 def app():
     app = create_app()
     with app.app_context():
         yield app
+
 
 @pytest.fixture
 def session(app):
     session = get_session()
     yield session
     session.close()
+
 
 def test_memory_usage(session):
     # Monitora o uso de memória antes e após a geração de atendimentos
@@ -25,7 +28,10 @@ def test_memory_usage(session):
     mem_after = process.memory_info().rss  # Memória usada após a execução
 
     # Assegura que o uso de memória não aumenta drasticamente
-    assert (mem_after - mem_before) < (100 * 1024 * 1024), "Uso de memória excedeu 100 MB"
+    assert (mem_after - mem_before) < (
+        100 * 1024 * 1024
+    ), "Uso de memória excedeu 100 MB"
+
 
 def test_cpu_usage(session):
     # Monitora o uso de CPU durante a geração de atendimentos
@@ -42,6 +48,7 @@ def test_cpu_usage(session):
     # Verifica que o uso de CPU não excedeu 80% e a execução não levou mais de 60 segundos
     assert cpu_after < 80, "Uso de CPU excedeu 80%"
     assert execution_time < 60, "Tempo de execução excedeu 60 segundos"
+
 
 def test_large_batch_performance(session):
     # Teste de desempenho para geração de 10.000 atendimentos
