@@ -138,7 +138,7 @@ if not df.empty:
     with col1:
         # Exibição da tabela de dados
         st.subheader("Tabela de Dados")
-        st.dataframe(df.style.set_properties(**{'font-size': '20pt'}))
+        st.dataframe(df)
 
     with col2:
         # Criação do Heatmap
@@ -157,11 +157,8 @@ if not df.empty:
         )
 
         fig, ax = plt.subplots(figsize=(10, 6))
-        sns.heatmap(df_pivot, annot=True, fmt="d", cmap="coolwarm", cbar=True, ax=ax, annot_kws={"size": 20})
-        ax.set_title(f"Distribuição de Doenças por Faixa Etária e Gênero ({period_label})", fontsize=20)
-        ax.set_xlabel("Sexo", fontsize=20)
-        ax.set_ylabel("Faixa Etária", fontsize=20)
-        ax.tick_params(axis='both', which='major', labelsize=20)
+        sns.heatmap(df_pivot, annot=True, fmt="d", cmap="coolwarm", cbar=True, ax=ax)
+        ax.set_title(f"Distribuição de Doenças por Faixa Etária e Gênero ({period_label})")
         st.pyplot(fig)
 else:
     st.warning("Nenhum dado disponível para os filtros selecionados.")
