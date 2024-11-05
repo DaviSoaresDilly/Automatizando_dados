@@ -1,4 +1,4 @@
-# app/validators.py
+# application/validators.py
 
 
 def validar_dados_atendimento(data):
