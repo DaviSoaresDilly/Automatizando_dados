@@ -53,6 +53,9 @@ def analise_descritiva(app):
 
     # Verifica se o DataFrame não está vazio
     if not df.empty:
+        # Log para verificar o número de registros carregados
+        print(f"Número de registros carregados: {len(df)}")
+
         # Criação do layout de grade
         col1, col2 = st.columns(2)
 
@@ -84,9 +87,15 @@ def analise_descritiva(app):
 
         # Gerar Relatório
         if st.button("Gerar Relatório"):
-            analysis_summary = "Esta análise mostra a distribuição de doenças por faixa etária e gênero. Observa-se que a gripe é mais comum em crianças e idosos, enquanto a Covid é mais prevalente em adolescentes e adultos."
-            output_path = 'relatorio_analise.pdf'
-            generate_report(df, analysis_summary, output_path)
-            st.success(f"Relatório gerado com sucesso: {os.path.join('reports', output_path)}")
+            analysis_summary = (
+                "Esta análise mostra a distribuição de doenças por faixa etária e gênero. "
+                "Observa-se que a gripe é mais comum em crianças e idosos, enquanto a Covid "
+                "é mais prevalente em adolescentes e adultos."
+            )
+            output_path_pdf = 'relatorio_analise.pdf'
+            output_path_csv = 'tabela_dados.csv'
+            generate_report(df, analysis_summary, output_path_pdf, output_path_csv)
+            st.success(f"Relatório gerado com sucesso: {os.path.join('reports', output_path_pdf)}")
+            st.success(f"Tabela de dados gerada com sucesso: {os.path.join('reports', output_path_csv)}")
     else:
         st.warning("Nenhum dado disponível para os filtros selecionados.")

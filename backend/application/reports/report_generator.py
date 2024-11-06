@@ -29,25 +29,36 @@ class PDF(FPDF):
     def add_image(self, image_path, x, y, w, h):
         self.image(image_path, x, y, w, h)
 
-def generate_report(df, analysis_summary, output_path):
+def generate_report(df, analysis_summary, output_path_pdf, output_path_csv):
     pdf = PDF()
     pdf.add_page()
 
-    # Adicionar título e resumo da análise
-    pdf.chapter_title('Resumo da Análise')
+    # Adicionar Introdução
+    pdf.chapter_title('Introdução')
+    introduction = (
+        "Este relatório apresenta uma análise detalhada dos dados de saúde coletados, "
+        "focando na distribuição de doenças por faixa etária e gênero. O objetivo é "
+        "identificar padrões e tendências que possam informar decisões estratégicas em "
+        "saúde pública."
+    )
+    pdf.chapter_body(introduction)
+
+    # Adicionar Metodologia
+    pdf.chapter_title('Metodologia')
+    methodology = (
+        "Os dados foram coletados de registros hospitalares e incluem informações sobre "
+        "idade, gênero e tipo de doença dos pacientes. A análise descritiva foi realizada "
+        "para identificar a distribuição de doenças por diferentes faixas etárias e gêneros. "
+        "Foram utilizados gráficos de calor para visualizar os dados."
+    )
+    pdf.chapter_body(methodology)
+
+    # Adicionar Resultados
+    pdf.chapter_title('Resultados')
     pdf.chapter_body(analysis_summary)
 
-    # Adicionar estatísticas descritivas
-    pdf.chapter_title('Estatísticas Descritivas')
-    stats = df.describe().to_string()
-    pdf.chapter_body(stats)
-
-    # Adicionar tabela de dados
-    pdf.chapter_title('Tabela de Dados')
-    table_data = df.head(10).to_string(index=False)
-    pdf.chapter_body(table_data)
-
     # Adicionar gráfico de heatmap
+    pdf.add_page()
     pdf.chapter_title('Gráfico de Distribuição')
     fig, ax = plt.subplots(figsize=(10, 6))
     df_pivot = pd.pivot_table(
@@ -63,24 +74,38 @@ def generate_report(df, analysis_summary, output_path):
     ax.set_title('Distribuição de Doenças por Faixa Etária e Gênero')
     image_path = 'heatmap.png'
     plt.savefig(image_path)
-    pdf.add_image(image_path, 10, 100, 190, 100)
+    pdf.add_image(image_path, 10, 50, 190, 100)
     os.remove(image_path)
 
-    # Adicionar gráfico de barras
+    # Adicionar Discussão
     pdf.add_page()
-    pdf.chapter_title('Gráfico de Barras')
-    fig, ax = plt.subplots(figsize=(10, 6))
-    df['Doenca'].value_counts().plot(kind='bar', ax=ax)
-    ax.set_title('Distribuição de Doenças')
-    image_path = 'bar_chart.png'
-    plt.savefig(image_path)
-    pdf.add_image(image_path, 10, 100, 190, 100)
-    os.remove(image_path)
+    pdf.chapter_title('Discussão')
+    discussion = (
+        "Os resultados mostram que a gripe é mais comum em crianças e idosos, enquanto a Covid "
+        "é mais prevalente em adolescentes e adultos. Esses padrões podem ser explicados por "
+        "fatores como a maior exposição das crianças a ambientes escolares e a maior vulnerabilidade "
+        "dos idosos. A prevalência da Covid em adolescentes e adultos pode estar relacionada a "
+        "maiores níveis de interação social e mobilidade."
+    )
+    pdf.chapter_body(discussion)
+
+    # Adicionar Conclusão
+    pdf.chapter_title('Conclusão')
+    conclusion = (
+        "Esta análise fornece insights valiosos sobre a distribuição de doenças por faixa etária e gênero. "
+        "Essas informações podem ser usadas para direcionar esforços de prevenção e alocação de recursos "
+        "de maneira mais eficaz. Recomenda-se a continuidade do monitoramento e a realização de análises "
+        "periódicas para acompanhar as mudanças nos padrões de saúde da população."
+    )
+    pdf.chapter_body(conclusion)
 
     # Salvar o PDF na pasta reports
     if not os.path.exists('reports'):
         os.makedirs('reports')
-    pdf.output(os.path.join('reports', output_path))
+    pdf.output(os.path.join('reports', output_path_pdf))
+
+    # Salvar a tabela de dados em CSV na pasta reports
+    df.to_csv(os.path.join('reports', output_path_csv), index=False)
 
 # Exemplo de uso
 if __name__ == "__main__":
@@ -93,5 +118,6 @@ if __name__ == "__main__":
     }
     df = pd.DataFrame(data)
     analysis_summary = "Esta análise mostra a distribuição de doenças por faixa etária e gênero. Observa-se que a gripe é mais comum em crianças e idosos, enquanto a Covid é mais prevalente em adolescentes e adultos."
-    output_path = 'relatorio_analise.pdf'
-    generate_report(df, analysis_summary, output_path)
+    output_path_pdf = 'relatorio_analise.pdf'
+    output_path_csv = 'tabela_dados.csv'
+    generate_report(df, analysis_summary, output_path_pdf, output_path_csv)
