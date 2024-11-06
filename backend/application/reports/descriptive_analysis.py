@@ -5,6 +5,7 @@ import geopandas as gpd
 import os
 import pandas as pd
 import streamlit as st
+import requests
 import matplotlib.pyplot as plt
 import seaborn as sns
 from application.database import get_session
@@ -142,6 +143,7 @@ def analise_incidencia_bairros(app):
     with app.app_context():
         session = get_session()
         data_inicio, data_fim = calculate_date_range(selected_period, selected_ano, selected_mes, selected_trimestre)
+        period_label = get_period_label(selected_period, data_inicio, data_fim)
         doencas = get_doencas_por_especialidade(session, selected_especialidade)
         df = fetch_data_bairros(session, selected_period, selected_ano, selected_mes, selected_trimestre, doencas, selected_bairro)
         session.close()
@@ -151,46 +153,63 @@ def analise_incidencia_bairros(app):
         # Log para verificar o número de registros carregados
         print(f"Número de registros carregados: {len(df)}")
 
-        # Criação do layout de grade
-        col1, col2 = st.columns(2)
+        # Dividir os bairros em dois grupos
+        bairros_list = df['Bairro'].unique()
+        mid_index = len(bairros_list) // 2
+        bairros_grupo1 = bairros_list[:mid_index]
+        bairros_grupo2 = bairros_list[mid_index:]
 
-        with col1:
-            # Criação do Mapa de Bairros
-            period_label = get_period_label(selected_period, data_inicio, data_fim)
-            st.subheader(f"Distribuição de Doenças por Bairros - {period_label}")
+        # Filtrar os dados para cada grupo de bairros
+        df_grupo1 = df[df['Bairro'].isin(bairros_grupo1)]
+        df_grupo2 = df[df['Bairro'].isin(bairros_grupo2)]
 
-            # Carregar o shapefile dos bairros (substitua 'path_to_shapefile' pelo caminho correto)
-            shapefile_path = 'caminho/para/seu/shapefile.shp'  # Substitua pelo caminho correto
-            gdf_bairros = gpd.read_file(shapefile_path)
+        # Layout para o Grupo 1
+        with st.container():
+            st.subheader(f"Distribuição de Doenças por Bairros - Grupo 1 - {period_label}")
 
-            # Contagem de casos por bairro
-            df_count = df.groupby('Bairro').size().reset_index(name='Casos')
+            # Contagem de casos por bairro e doença para o Grupo 1
+            df_count_grupo1 = df_grupo1.groupby(['Bairro', 'Doenca']).size().reset_index(name='Casos')
 
-            # Mesclar os dados de contagem com o GeoDataFrame dos bairros
-            gdf_bairros = gdf_bairros.merge(df_count, left_on='nome_bairro', right_on='Bairro', how='left').fillna(0)
-
-            # Plotar o mapa
-            fig, ax = plt.subplots(1, 1, figsize=(10, 6))
-            gdf_bairros.plot(column='Casos', ax=ax, legend=True, cmap='OrRd', legend_kwds={'label': "Número de Casos"})
-            plt.title(f"Distribuição de Doenças por Bairros - {period_label}")
-            plt.xlabel("Longitude")
-            plt.ylabel("Latitude")
+            # Criação do gráfico de bolhas para o Grupo 1
+            fig, ax = plt.subplots(figsize=(14, 8))
+            scatter = ax.scatter(
+                x=df_count_grupo1['Bairro'],
+                y=df_count_grupo1['Doenca'],
+                s=df_count_grupo1['Casos'] * 50,  # Ajuste o tamanho das bolhas conforme necessário
+                alpha=0.6,
+                edgecolors="w",
+                linewidth=0.5
+            )
+            ax.set_xlabel("Bairro")
+            ax.set_ylabel("Doença")
+            ax.set_title(f"Distribuição de Doenças por Bairros - Grupo 1 - {period_label}")
+            plt.xticks(rotation=45)
+            plt.grid(True, linestyle='--', alpha=0.7)
             st.pyplot(fig)
 
-        with col2:
-            # Criação do Gráfico de Barras
-            st.subheader(f"Distribuição de Doenças por Especialidade - {period_label}")
+        # Layout para o Grupo 2
+        with st.container():
+            st.subheader(f"Distribuição de Doenças por Bairros - Grupo 2 - {period_label}")
 
-            # Criação de uma tabela de contagem para o gráfico de barras
-            df_count = df.groupby(['Bairro', 'Doenca']).size().unstack(fill_value=0)
+            # Contagem de casos por bairro e doença para o Grupo 2
+            df_count_grupo2 = df_grupo2.groupby(['Bairro', 'Doenca']).size().reset_index(name='Casos')
 
-            df_count.plot(kind='bar', stacked=True, figsize=(10, 6))
-            plt.title(f"Distribuição de Doenças por Especialidade - {period_label}")
-            plt.xlabel("Bairro")
-            plt.ylabel("Número de Casos")
+            # Criação do gráfico de bolhas para o Grupo 2
+            fig, ax = plt.subplots(figsize=(10, 5))
+            scatter = ax.scatter(
+                x=df_count_grupo2['Bairro'],
+                y=df_count_grupo2['Doenca'],
+                s=df_count_grupo2['Casos'] * 150,  # Ajuste o tamanho das bolhas conforme necessário
+                alpha=0.6,
+                edgecolors="w",
+                linewidth=0.7
+            )
+            ax.set_xlabel("Bairro")
+            ax.set_ylabel("Doença")
+            ax.set_title(f"Distribuição de Doenças por Bairros - Grupo 2 - {period_label}")
             plt.xticks(rotation=45)
-            plt.legend(title="Doença")
-            st.pyplot(plt)
+            plt.grid(True, linestyle='--', alpha=0.7)
+            st.pyplot(fig)
 
         # Gerar Relatório
         if st.button("Gerar Relatório", key="gerar_relatorio_bairros"):
@@ -199,10 +218,9 @@ def analise_incidencia_bairros(app):
                 "Observa-se que determinados bairros têm uma incidência maior de doenças, "
                 "o que pode indicar a necessidade de intervenções específicas nessas áreas."
             )
-            period_label = selected_ano
-            output_path_pdf = f'relatorio_incidencia_bairros_{period_label}.pdf'
-            output_path_csv = f'tabela_incidencia_bairros_{period_label}.csv'
-            generate_report(df, analysis_summary, output_path_pdf, output_path_csv, period_label)
+            output_path_pdf = f'relatorio_incidencia_bairros_{selected_ano}.pdf'
+            output_path_csv = f'tabela_incidencia_bairros_{selected_ano}.csv'
+            generate_report(df, analysis_summary, output_path_pdf, output_path_csv, selected_ano)
             st.success(f"Relatório gerado com sucesso: {os.path.join('reports', output_path_pdf)}")
             st.success(f"Tabela de dados gerada com sucesso: {os.path.join('reports', output_path_csv)}")
     else:
