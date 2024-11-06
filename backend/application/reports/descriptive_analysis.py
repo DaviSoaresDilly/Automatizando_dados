@@ -12,15 +12,15 @@ from date_utils import calculate_date_range, get_period_label
 from report_generator import generate_report
 
 def analise_descritiva(app):
-    st.header("Análise Descritiva")
+    st.header("Análise Descritiva de distribuição de doenças")
 
     # Proposta da Análise
     st.markdown("""
-    ### Proposta da Análise Descritiva
+    ### Proposta da Análise
 
     A análise descritiva é uma abordagem fundamental na análise de dados que se concentra em resumir e descrever as características principais de um conjunto de dados. No contexto da saúde pública, a análise descritiva pode ser usada para entender melhor a distribuição de doenças por faixa etária, gênero e outros fatores demográficos. Esta análise ajuda a identificar padrões e tendências que podem ser críticos para a tomada de decisões informadas e para o planejamento estratégico.
 
-    **Benefícios da Análise Descritiva**:
+    **Benefícios da Análise**:
     - **Identificação de Padrões**: A análise descritiva permite identificar padrões na distribuição de doenças, como quais faixas etárias ou gêneros são mais afetados por determinadas doenças.
     - **Planejamento de Recursos**: Compreender a distribuição de doenças ajuda na alocação eficiente de recursos, como profissionais de saúde, medicamentos e equipamentos.
     - **Prevenção e Controle**: Identificar grupos de risco pode ajudar na implementação de medidas preventivas e de controle mais eficazes.
