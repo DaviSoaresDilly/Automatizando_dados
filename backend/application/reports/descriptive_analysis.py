@@ -1,6 +1,7 @@
 # application/reports/descriptive_analysis.py
 
 from datetime import datetime
+import os
 import pandas as pd
 import streamlit as st
 import matplotlib.pyplot as plt
@@ -86,6 +87,6 @@ def analise_descritiva(app):
             analysis_summary = "Esta análise mostra a distribuição de doenças por faixa etária e gênero. Observa-se que a gripe é mais comum em crianças e idosos, enquanto a Covid é mais prevalente em adolescentes e adultos."
             output_path = 'relatorio_analise.pdf'
             generate_report(df, analysis_summary, output_path)
-            st.success(f"Relatório gerado com sucesso: {output_path}")
+            st.success(f"Relatório gerado com sucesso: {os.path.join('reports', output_path)}")
     else:
         st.warning("Nenhum dado disponível para os filtros selecionados.")

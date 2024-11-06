@@ -37,12 +37,17 @@ def generate_report(df, analysis_summary, output_path):
     pdf.chapter_title('Resumo da Análise')
     pdf.chapter_body(analysis_summary)
 
+    # Adicionar estatísticas descritivas
+    pdf.chapter_title('Estatísticas Descritivas')
+    stats = df.describe().to_string()
+    pdf.chapter_body(stats)
+
     # Adicionar tabela de dados
     pdf.chapter_title('Tabela de Dados')
     table_data = df.head(10).to_string(index=False)
     pdf.chapter_body(table_data)
 
-    # Adicionar gráfico
+    # Adicionar gráfico de heatmap
     pdf.chapter_title('Gráfico de Distribuição')
     fig, ax = plt.subplots(figsize=(10, 6))
     df_pivot = pd.pivot_table(
@@ -61,7 +66,21 @@ def generate_report(df, analysis_summary, output_path):
     pdf.add_image(image_path, 10, 100, 190, 100)
     os.remove(image_path)
 
-    pdf.output(output_path)
+    # Adicionar gráfico de barras
+    pdf.add_page()
+    pdf.chapter_title('Gráfico de Barras')
+    fig, ax = plt.subplots(figsize=(10, 6))
+    df['Doenca'].value_counts().plot(kind='bar', ax=ax)
+    ax.set_title('Distribuição de Doenças')
+    image_path = 'bar_chart.png'
+    plt.savefig(image_path)
+    pdf.add_image(image_path, 10, 100, 190, 100)
+    os.remove(image_path)
+
+    # Salvar o PDF na pasta reports
+    if not os.path.exists('reports'):
+        os.makedirs('reports')
+    pdf.output(os.path.join('reports', output_path))
 
 # Exemplo de uso
 if __name__ == "__main__":
