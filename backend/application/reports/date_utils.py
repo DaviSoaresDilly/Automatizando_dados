@@ -3,6 +3,7 @@
 from datetime import date, datetime
 import pandas as pd
 
+# Função para calcular a data de início com base no período selecionado
 def calculate_date_range(period: str, ano: int, mes: int = None, trimestre: str = None):
     """
     Calcula a data de início com base no período selecionado.
@@ -30,6 +31,7 @@ def calculate_date_range(period: str, ano: int, mes: int = None, trimestre: str 
     print(f"Data de início calculada para o período '{period}': {start_date}")
     return start_date, end_date
 
+# Função para obter o rótulo do período
 def get_period_label(period, start_date, end_date):
     if period == "Mensal":
         return start_date.strftime("%B de %Y")
@@ -38,3 +40,4 @@ def get_period_label(period, start_date, end_date):
     elif period == "Anual":
         return start_date.strftime("%Y")
     return ""
+

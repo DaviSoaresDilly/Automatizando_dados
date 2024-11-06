@@ -6,6 +6,7 @@ import seaborn as sns
 import pandas as pd
 import os
 
+# Classe para gerar o PDF
 class PDF(FPDF):
     def __init__(self, period_label):
         super().__init__()
@@ -33,6 +34,7 @@ class PDF(FPDF):
     def add_image(self, image_path, x, y, w, h):
         self.image(image_path, x, y, w, h)
 
+# Função para gerar o relatório
 def generate_report(df, analysis_summary, output_path_pdf, output_path_csv, period_label):
     pdf = PDF(period_label)
     pdf.add_page()

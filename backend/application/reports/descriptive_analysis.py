@@ -1,11 +1,9 @@
 # application/reports/descriptive_analysis.py
 
 from datetime import datetime
-import geopandas as gpd
 import os
 import pandas as pd
 import streamlit as st
-import requests
 import matplotlib.pyplot as plt
 import seaborn as sns
 from application.database import get_session
@@ -59,34 +57,35 @@ def analise_distribuicao_doenca(app):
         # Log para verificar o número de registros carregados
         print(f"Número de registros carregados: {len(df)}")
 
-        # Criação do layout de grade
-        col1, col2 = st.columns(2)
+        with st.container():
+            # Criação do layout de grade
+            col1, col2 = st.columns([0.4,0.6])
 
-        with col1:
-            # Exibição da tabela de dados
-            st.subheader("Tabela de Dados")
-            st.dataframe(df)
+            with col1:
+                # Exibição da tabela de dados
+                st.markdown(f"<h3 style='text-align: center;'>Tabela de Dados - {selected_ano}</h3>", unsafe_allow_html=True)
+                st.dataframe(df)
 
-        with col2:
-            # Criação do Heatmap
-            period_label = get_period_label(selected_period, data_inicio, data_fim)
-            st.subheader(f"Distribuição de Doenças por Faixa Etária e Gênero - {period_label}")
+            with col2:
+                # Criação do Heatmap
+                period_label = get_period_label(selected_period, data_inicio, data_fim)
+                st.markdown(f"<h3 style='text-align: center;'>Distribuição de Doenças - {period_label}</h3>", unsafe_allow_html=True)
 
-            # Criação de uma tabela de contagem para o heatmap
-            df_pivot = pd.pivot_table(
-                df,
-                values="Doenca",
-                index="Faixa Etária",
-                columns="Sexo",
-                aggfunc="count",
-                fill_value=0,
-                observed=False  # Adiciona o parâmetro observed=False
-            )
+                # Criação de uma tabela de contagem para o heatmap
+                df_pivot = pd.pivot_table(
+                    df,
+                    values="Doenca",
+                    index="Faixa Etária",
+                    columns="Sexo",
+                    aggfunc="count",
+                    fill_value=0,
+                    observed=False  # Adiciona o parâmetro observed=False
+                )
 
-            fig, ax = plt.subplots(figsize=(10, 6))
-            sns.heatmap(df_pivot, annot=True, fmt="d", cmap="coolwarm", cbar=True, ax=ax)
-            ax.set_title(f"Mapa de Calor")
-            st.pyplot(fig)
+                fig, ax = plt.subplots(figsize=(10, 6))
+                sns.heatmap(df_pivot, annot=True, fmt="d", cmap="coolwarm", cbar=True, ax=ax)
+                ax.set_title(f"Mapa de Calor")
+                st.pyplot(fig)
 
         # Gerar Relatório
         if st.button("Gerar Relatório"):
@@ -126,7 +125,7 @@ def analise_incidencia_bairros(app):
     with app.app_context():
         session = get_session()
         # Popula a lista de especialidades e bairros
-        especialidades = ["Todas"] + get_especialidades_list(session)
+        especialidades =  get_especialidades_list(session)
         bairros = ["Todos"] + get_bairros_list(session)
         session.close()
 
@@ -165,31 +164,31 @@ def analise_incidencia_bairros(app):
 
         # Layout para o Grupo 1
         with st.container():
-            st.subheader(f"Distribuição de Doenças por Bairros - Grupo 1 - {period_label}")
+            st.markdown(f"<h2 style='text-align: center;'>Doenças por Bairros - Grupo 1 - {period_label}</h2>", unsafe_allow_html=True)
 
             # Contagem de casos por bairro e doença para o Grupo 1
             df_count_grupo1 = df_grupo1.groupby(['Bairro', 'Doenca']).size().reset_index(name='Casos')
 
             # Criação do gráfico de bolhas para o Grupo 1
-            fig, ax = plt.subplots(figsize=(14, 8))
+            fig, ax = plt.subplots(figsize=(10, 5))
             scatter = ax.scatter(
                 x=df_count_grupo1['Bairro'],
                 y=df_count_grupo1['Doenca'],
-                s=df_count_grupo1['Casos'] * 50,  # Ajuste o tamanho das bolhas conforme necessário
+                s=df_count_grupo1['Casos'] * 150,  # Ajuste o tamanho das bolhas conforme necessário
                 alpha=0.6,
                 edgecolors="w",
-                linewidth=0.5
+                linewidth=0.7
             )
             ax.set_xlabel("Bairro")
             ax.set_ylabel("Doença")
-            ax.set_title(f"Distribuição de Doenças por Bairros - Grupo 1 - {period_label}")
+            ax.set_title(f"Incidência de Doenças por Bairros - Grupo 1 - {period_label}")
             plt.xticks(rotation=45)
             plt.grid(True, linestyle='--', alpha=0.7)
             st.pyplot(fig)
 
         # Layout para o Grupo 2
         with st.container():
-            st.subheader(f"Distribuição de Doenças por Bairros - Grupo 2 - {period_label}")
+            st.markdown(f"<h2 style='text-align: center;'>Doenças por Bairros - Grupo 2 - {period_label}</h2>", unsafe_allow_html=True)
 
             # Contagem de casos por bairro e doença para o Grupo 2
             df_count_grupo2 = df_grupo2.groupby(['Bairro', 'Doenca']).size().reset_index(name='Casos')
@@ -206,7 +205,7 @@ def analise_incidencia_bairros(app):
             )
             ax.set_xlabel("Bairro")
             ax.set_ylabel("Doença")
-            ax.set_title(f"Distribuição de Doenças por Bairros - Grupo 2 - {period_label}")
+            ax.set_title(f"Incidência de Doenças por Bairros - Grupo 2 - {period_label}")
             plt.xticks(rotation=45)
             plt.grid(True, linestyle='--', alpha=0.7)
             st.pyplot(fig)
