@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 from application.database import create_app, get_session
-from descriptive_analysis import analise_descritiva
+from descriptive_analysis import analise_distribuicao_doenca, analise_incidencia_bairros
 from predictive_analysis import analise_preditiva
 from statistical_analysis import analise_estatistica
 
@@ -25,7 +25,8 @@ choice = st.sidebar.selectbox("Selecione o Tipo de Análise", menu)
 
 # Navegação entre as páginas
 if choice == "Descritiva":
-    analise_descritiva(app)
+    analise_distribuicao_doenca(app)
+    analise_incidencia_bairros(app)
 elif choice == "Preditiva":
     analise_preditiva()
 elif choice == "Estatística":
