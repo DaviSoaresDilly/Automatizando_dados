@@ -8,6 +8,7 @@ import seaborn as sns
 from application.database import get_session
 from data_fetcher import get_doenca_list, fetch_data
 from date_utils import calculate_date_range, get_period_label
+from report_generator import generate_report
 
 def analise_descritiva(app):
     st.header("Análise Descritiva")
@@ -79,5 +80,12 @@ def analise_descritiva(app):
             sns.heatmap(df_pivot, annot=True, fmt="d", cmap="coolwarm", cbar=True, ax=ax)
             ax.set_title(f"Mapa de Calor")
             st.pyplot(fig)
+
+        # Gerar Relatório
+        if st.button("Gerar Relatório"):
+            analysis_summary = "Esta análise mostra a distribuição de doenças por faixa etária e gênero. Observa-se que a gripe é mais comum em crianças e idosos, enquanto a Covid é mais prevalente em adolescentes e adultos."
+            output_path = 'relatorio_analise.pdf'
+            generate_report(df, analysis_summary, output_path)
+            st.success(f"Relatório gerado com sucesso: {output_path}")
     else:
         st.warning("Nenhum dado disponível para os filtros selecionados.")
