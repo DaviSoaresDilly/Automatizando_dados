@@ -7,9 +7,13 @@ import pandas as pd
 import os
 
 class PDF(FPDF):
+    def __init__(self, period_label):
+        super().__init__()
+        self.period_label = period_label
+
     def header(self):
         self.set_font('Arial', 'B', 12)
-        self.cell(0, 10, 'Relatório de Análise de Dados de Saúde', 0, 1, 'C')
+        self.cell(0, 10, f'Relatório de Análise de Dados de Saúde {self.period_label}', 0, 1, 'C')
 
     def footer(self):
         self.set_y(-15)
@@ -29,8 +33,8 @@ class PDF(FPDF):
     def add_image(self, image_path, x, y, w, h):
         self.image(image_path, x, y, w, h)
 
-def generate_report(df, analysis_summary, output_path_pdf, output_path_csv):
-    pdf = PDF()
+def generate_report(df, analysis_summary, output_path_pdf, output_path_csv, period_label):
+    pdf = PDF(period_label)
     pdf.add_page()
 
     # Adicionar Introdução
@@ -118,6 +122,7 @@ if __name__ == "__main__":
     }
     df = pd.DataFrame(data)
     analysis_summary = "Esta análise mostra a distribuição de doenças por faixa etária e gênero. Observa-se que a gripe é mais comum em crianças e idosos, enquanto a Covid é mais prevalente em adolescentes e adultos."
-    output_path_pdf = 'relatorio_analise.pdf'
-    output_path_csv = 'tabela_dados.csv'
-    generate_report(df, analysis_summary, output_path_pdf, output_path_csv)
+    period_label = "2024"
+    output_path_pdf = f'relatorio_analise_{period_label}.pdf'
+    output_path_csv = f'tabela_dados_{period_label}.csv'
+    generate_report(df, analysis_summary, output_path_pdf, output_path_csv, period_label)

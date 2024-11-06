@@ -92,9 +92,10 @@ def analise_descritiva(app):
                 "Observa-se que a gripe é mais comum em crianças e idosos, enquanto a Covid "
                 "é mais prevalente em adolescentes e adultos."
             )
-            output_path_pdf = 'relatorio_analise.pdf'
-            output_path_csv = 'tabela_dados.csv'
-            generate_report(df, analysis_summary, output_path_pdf, output_path_csv)
+            period_label = selected_ano
+            output_path_pdf = f'relatorio_analise_{period_label}.pdf'
+            output_path_csv = f'tabela_dados_{period_label}.csv'
+            generate_report(df, analysis_summary, output_path_pdf, output_path_csv, period_label)
             st.success(f"Relatório gerado com sucesso: {os.path.join('reports', output_path_pdf)}")
             st.success(f"Tabela de dados gerada com sucesso: {os.path.join('reports', output_path_csv)}")
     else:

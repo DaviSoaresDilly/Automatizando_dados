@@ -29,3 +29,12 @@ def calculate_date_range(period: str, ano: int, mes: int = None, trimestre: str 
     # Log para verificar a data de início calculada
     print(f"Data de início calculada para o período '{period}': {start_date}")
     return start_date, end_date
+
+def get_period_label(period, start_date, end_date):
+    if period == "Mensal":
+        return start_date.strftime("%B de %Y")
+    elif period == "Trimestral":
+        return f"{start_date.strftime('%B')} a {end_date.strftime('%B de %Y')}"
+    elif period == "Anual":
+        return start_date.strftime("%Y")
+    return ""
