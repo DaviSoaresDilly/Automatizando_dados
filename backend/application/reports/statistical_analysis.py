@@ -55,6 +55,8 @@ def analise_estatistica_atendimentos_medicos(app):
         # Log para verificar o número de registros carregados
         print(f"Número de registros carregados: {len(df)}")
 
+        period_label = get_period_label(selected_period, df['Data_Atendimento'].min(), df['Data_Atendimento'].max())
+
         with st.container():
             # Criação do layout de grade
             col1, col2 = st.columns([0.4, 0.6])
@@ -65,34 +67,54 @@ def analise_estatistica_atendimentos_medicos(app):
                 st.dataframe(df)
 
             with col2:
-                # Gráfico de Distribuição de Atendimentos por Médico
-                period_label = get_period_label(selected_period, df['Data_Atendimento'].min(), df['Data_Atendimento'].max())
-                st.markdown(f"<h3 style='text-align: center;'>Distribuição de Atendimentos por Médico - {period_label}</h3>", unsafe_allow_html=True)
-                fig, ax = plt.subplots(figsize=(10, 6))
-                sns.countplot(x="Medico", data=df, ax=ax)
-                ax.set_xlabel("Médico")
-                ax.set_ylabel("Número de Atendimentos")
-                ax.set_title("Distribuição de Atendimentos por Médico")
-                plt.xticks(rotation=45)
-                st.pyplot(fig)
-
                 # Gráfico de Distribuição de Idade dos Pacientes
                 st.markdown(f"<h3 style='text-align: center;'>Distribuição de Idade dos Pacientes - {period_label}</h3>", unsafe_allow_html=True)
                 fig, ax = plt.subplots(figsize=(10, 6))
-                sns.histplot(df["Idade"], bins=20, kde=True, ax=ax)
-                ax.set_xlabel("Idade")
-                ax.set_ylabel("Frequência")
-                ax.set_title("Distribuição de Idade dos Pacientes")
+                sns.histplot(df["Idade"], bins=20, kde=True, ax=ax, color="#3A84DF")
+                ax.set_xlabel("Idade", fontsize=12)
+                ax.set_ylabel("Frequência", fontsize=12)
+                ax.set_title("Distribuição de Idade dos Pacientes", fontsize=16)
+                for p in ax.patches:
+                    ax.annotate(f'{int(p.get_height())}', 
+                                (p.get_x() + p.get_width() / 2, p.get_height()), 
+                                ha='center', va='bottom', fontsize=10, color="black")
                 st.pyplot(fig)
+                st.markdown("<p style='text-align: center;'>Gráfico mostrando a distribuição de idade dos pacientes atendidos durante o período selecionado.</p>", unsafe_allow_html=True)
 
-                # Gráfico de Distribuição de Atendimentos por Gênero
-                st.markdown(f"<h3 style='text-align: center;'>Distribuição de Atendimentos por Gênero - {period_label}</h3>", unsafe_allow_html=True)
-                fig, ax = plt.subplots(figsize=(10, 6))
-                sns.countplot(x="Sexo", data=df, ax=ax)
-                ax.set_xlabel("Gênero")
-                ax.set_ylabel("Número de Atendimentos")
-                ax.set_title("Distribuição de Atendimentos por Gênero")
-                st.pyplot(fig)
+        with st.container():
+            # Margem para o próximo gráfico
+            st.markdown("<br><br>", unsafe_allow_html=True)
+
+            # Gráfico de Distribuição de Atendimentos por Médico
+            st.markdown(f"<h3 style='text-align: center;'>Distribuição de Atendimentos por Médico - {period_label}</h3>", unsafe_allow_html=True)
+            fig, ax = plt.subplots(figsize=(10, 6))
+            sns.countplot(x="Medico", data=df, ax=ax, palette="Set2")
+            ax.set_xlabel("Médico", fontsize=12)
+            ax.set_ylabel("Número de Atendimentos", fontsize=12)
+            ax.set_title("Distribuição de Atendimentos por Médico", fontsize=16)
+            plt.xticks(rotation=45, ha='right')
+            for p in ax.patches:
+                ax.annotate(f'{int(p.get_height())}', 
+                            (p.get_x() + p.get_width() / 2, p.get_height()), 
+                            ha='center', va='bottom', fontsize=10, color="black")
+            st.pyplot(fig)
+
+        with st.container():
+            # Margem para o próximo gráfico
+            st.markdown("<br><br>", unsafe_allow_html=True)
+
+            # Gráfico de Distribuição de Atendimentos por Gênero
+            st.markdown(f"<h3 style='text-align: center;'>Distribuição de Atendimentos por Gênero - {period_label}</h3>", unsafe_allow_html=True)
+            fig, ax = plt.subplots(figsize=(10, 6))
+            sns.countplot(x="Sexo", data=df, ax=ax, palette="Pastel1")
+            ax.set_xlabel("Gênero", fontsize=12)
+            ax.set_ylabel("Número de Atendimentos", fontsize=12)
+            ax.set_title("Distribuição de Atendimentos por Gênero", fontsize=16)
+            for p in ax.patches:
+                ax.annotate(f'{int(p.get_height())}', 
+                            (p.get_x() + p.get_width() / 2, p.get_height()), 
+                            ha='center', va='bottom', fontsize=10, color="black")
+            st.pyplot(fig)
 
         # Gerar Relatório
         if st.button("Gerar Relatório", key="gerar_relatorio_atendimentos"):

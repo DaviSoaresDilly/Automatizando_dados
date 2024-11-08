@@ -54,8 +54,8 @@ def generate_report(df, analysis_summary, output_path_pdf, output_path_csv, peri
     pdf.chapter_title('Resultados')
     pdf.chapter_body(analysis_summary)
 
-    # Adicionar gráfico de heatmap
-    if 'Doenca' in df.columns:
+    # Adicionar gráfico de heatmap se a coluna 'Faixa Etária' estiver presente
+    if 'Faixa Etária' in df.columns:
         pdf.add_page()
         pdf.chapter_title('Gráfico de Distribuição')
         fig, ax = plt.subplots(figsize=(10, 6))

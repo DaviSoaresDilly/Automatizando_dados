@@ -52,14 +52,13 @@ def analise_distribuicao_doenca(app):
         df = fetch_data(session, selected_period, selected_ano, selected_mes, selected_trimestre, selected_doenca, selected_genero, selected_faixa_etaria)
         session.close()
 
-    # Verifica se o DataFrame não está vazio
+    # Verificação se o DataFrame não está vazio
     if not df.empty:
-        # Log para verificar o número de registros carregados
         print(f"Número de registros carregados: {len(df)}")
 
         with st.container():
             # Criação do layout de grade
-            col1, col2 = st.columns([0.4,0.6])
+            col1, col2 = st.columns([0.4, 0.6])
 
             with col1:
                 # Exibição da tabela de dados
@@ -78,14 +77,46 @@ def analise_distribuicao_doenca(app):
                     index="Faixa Etária",
                     columns="Sexo",
                     aggfunc="count",
-                    fill_value=0,
-                    observed=False  # Adiciona o parâmetro observed=False
+                    fill_value=0
                 )
 
-                fig, ax = plt.subplots(figsize=(10, 6))
-                sns.heatmap(df_pivot, annot=True, fmt="d", cmap="coolwarm", cbar=True, ax=ax)
-                ax.set_title(f"Mapa de Calor")
+                fig, ax = plt.subplots(figsize=(12, 8))
+
+                # Heatmap com customização de cores e anotações
+                heatmap = sns.heatmap(
+                    df_pivot, 
+                    annot=True, 
+                    fmt="d", 
+                    cmap="YlGnBu",  
+                    cbar=True, 
+                    ax=ax, 
+                    linewidths=0.5,  
+                    linecolor='gray',
+                    cbar_kws={'label': 'Número de Casos'}
+                )
+                
+                # Configurações do Colorbar
+                colorbar = heatmap.collections[0].colorbar
+                colorbar.ax.tick_params(labelsize=14)  # Define fontsize dos ticks do colorbar
+                colorbar.set_label("Número de Casos", fontsize=18, labelpad=20)  # Define fontsize do label do colorbar
+
+                # Personalização dos eixos e título com espaçamento
+                ax.set_title("Mapa de Calor", fontsize=20, weight='bold')
+                ax.set_xlabel("Gênero", fontsize=18, labelpad=20)  # Espaço extra entre eixo X e o gráfico
+                ax.set_ylabel("Faixa Etária", fontsize=18, labelpad=20)  # Espaço extra entre eixo Y e o gráfico
+                ax.tick_params(axis='both', labelsize=14)
+                plt.xticks(ha='right')  # Rotação dos rótulos do eixo X
+
+                # Ajuste do tamanho do texto das anotações
+                for text in heatmap.texts:
+                    text.set_size(14)
+
+                # Ajuste automático do layout para evitar sobreposição
+                plt.tight_layout()
+
                 st.pyplot(fig)
+
+
 
         # Gerar Relatório
         if st.button("Gerar Relatório"):
@@ -106,6 +137,8 @@ def analise_distribuicao_doenca(app):
 
 # Função para realizar a análise descritiva de incidência de doenças por bairros
 def analise_incidencia_bairros(app):
+    st.markdown("<hr>", unsafe_allow_html=True)
+
     st.header("Análise Descritiva de Incidência de Doenças por Bairros")
 
     # Proposta da Análise
@@ -164,56 +197,80 @@ def analise_incidencia_bairros(app):
 
         # Layout para o Grupo 1
         with st.container():
-            st.markdown(
-                # margem para a proxima análise
-                "<br><br><br>", unsafe_allow_html=True
-            )
+            # Margem para a próxima análise
+            st.markdown("<br><br>", unsafe_allow_html=True)
             st.markdown(f"<h3 style='text-align: center;'>Distribuição de Doenças por Bairros - {period_label}</h3>", unsafe_allow_html=True)
 
             # Contagem de casos por bairro e doença para o Grupo 1
             df_count_grupo1 = df_grupo1.groupby(['Bairro', 'Doenca']).size().reset_index(name='Casos')
 
             # Criação do gráfico de bolhas para o Grupo 1
-            fig, ax = plt.subplots(figsize=(10, 5))
+            fig, ax = plt.subplots(figsize=(12, 6))
             scatter = ax.scatter(
                 x=df_count_grupo1['Bairro'],
                 y=df_count_grupo1['Doenca'],
-                s=df_count_grupo1['Casos'] * 150,  # Ajuste o tamanho das bolhas conforme necessário
+                s=df_count_grupo1['Casos'] * 150,  # Ajuste do tamanho das bolhas
                 alpha=0.6,
-                edgecolors="w",
-                linewidth=0.5
+                edgecolors="gray",
+                linewidth=0.5,
+                c=df_count_grupo1['Casos'], cmap='viridis'  # Paleta de cores para as bolhas
             )
+            
+            # Anotação dos valores de casos nas bolhas
             for i in range(len(df_count_grupo1)):
-                ax.annotate(df_count_grupo1['Casos'][i], (df_count_grupo1['Bairro'][i], df_count_grupo1['Doenca'][i]), color='black', weight='bold', fontsize=9, ha='center', va='center')
-            ax.set_xlabel("Bairro")
-            ax.set_ylabel("Doença")
-            ax.set_title(f"Doenças por Bairros - Grupo 1")
+                ax.annotate(df_count_grupo1['Casos'][i], 
+                            (df_count_grupo1['Bairro'][i], df_count_grupo1['Doenca'][i]), 
+                            color='black', weight='bold', fontsize=8, ha='center', va='center')
+            
+            # Configurações de rótulos e título
+            ax.set_xlabel("Bairro", fontsize=12)
+            ax.set_ylabel("Doença", fontsize=12)
+            ax.set_title("Distribuição de Doenças por Bairros - Grupo 1", fontsize=16)
             plt.xticks(rotation=45)
-            plt.grid(True, linestyle='--', alpha=0.7)
+            plt.grid(True, linestyle='--', alpha=0.5)
+            
+            # Adicionando uma barra de cores (colorbar) para indicar o número de casos
+            cbar = plt.colorbar(scatter)
+            cbar.set_label('Número de Casos')
+
             st.pyplot(fig)
 
         # Layout para o Grupo 2
         with st.container():
+            st.markdown("<br><br>", unsafe_allow_html=True)
+            
             # Contagem de casos por bairro e doença para o Grupo 2
             df_count_grupo2 = df_grupo2.groupby(['Bairro', 'Doenca']).size().reset_index(name='Casos')
 
             # Criação do gráfico de bolhas para o Grupo 2
-            fig, ax = plt.subplots(figsize=(10, 5))
+            fig, ax = plt.subplots(figsize=(12, 6))
             scatter = ax.scatter(
                 x=df_count_grupo2['Bairro'],
                 y=df_count_grupo2['Doenca'],
-                s=df_count_grupo2['Casos'] * 150,  # Ajuste o tamanho das bolhas conforme necessário
+                s=df_count_grupo2['Casos'] * 150,
                 alpha=0.6,
-                edgecolors="w",
-                linewidth=0.5
+                edgecolors="gray",
+                linewidth=0.5,
+                c=df_count_grupo2['Casos'], cmap='cool'  # Paleta de cores
             )
+
+            # Anotação dos valores de casos nas bolhas
             for i in range(len(df_count_grupo2)):
-                ax.annotate(df_count_grupo2['Casos'][i], (df_count_grupo2['Bairro'][i], df_count_grupo2['Doenca'][i]), color='black', weight='bold', fontsize=9, ha='center', va='center')
-            ax.set_xlabel("Bairro")
-            ax.set_ylabel("Doença")
-            ax.set_title(f"Doenças por Bairros - Grupo 2")
+                ax.annotate(df_count_grupo2['Casos'][i], 
+                            (df_count_grupo2['Bairro'][i], df_count_grupo2['Doenca'][i]), 
+                            color='black', weight='bold', fontsize=8, ha='center', va='center')
+            
+            # Configurações de rótulos e título
+            ax.set_xlabel("Bairro", fontsize=12)
+            ax.set_ylabel("Doença", fontsize=12)
+            ax.set_title("Distribuição de Doenças por Bairros - Grupo 2", fontsize=16)
             plt.xticks(rotation=45)
-            plt.grid(True, linestyle='--', alpha=0.7)
+            plt.grid(True, linestyle='--', alpha=0.5)
+            
+            # Adicionando uma barra de cores para indicar o número de casos
+            cbar = plt.colorbar(scatter)
+            cbar.set_label('Número de Casos')
+
             st.pyplot(fig)
 
         # Gerar Relatório
