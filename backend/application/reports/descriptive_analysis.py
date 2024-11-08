@@ -125,7 +125,7 @@ def analise_incidencia_bairros(app):
     with app.app_context():
         session = get_session()
         # Popula a lista de especialidades e bairros
-        especialidades =  get_especialidades_list(session)
+        especialidades = get_especialidades_list(session)
         bairros = ["Todos"] + get_bairros_list(session)
         session.close()
 
@@ -164,7 +164,11 @@ def analise_incidencia_bairros(app):
 
         # Layout para o Grupo 1
         with st.container():
-            st.markdown(f"<h2 style='text-align: center;'>Doenças por Bairros - {period_label}</h2>", unsafe_allow_html=True)
+            st.markdown(
+                # margem para a proxima análise
+                "<br><br><br>", unsafe_allow_html=True
+            )
+            st.markdown(f"<h3 style='text-align: center;'>Distribuição de Doenças por Bairros - {period_label}</h3>", unsafe_allow_html=True)
 
             # Contagem de casos por bairro e doença para o Grupo 1
             df_count_grupo1 = df_grupo1.groupby(['Bairro', 'Doenca']).size().reset_index(name='Casos')
@@ -177,21 +181,19 @@ def analise_incidencia_bairros(app):
                 s=df_count_grupo1['Casos'] * 150,  # Ajuste o tamanho das bolhas conforme necessário
                 alpha=0.6,
                 edgecolors="w",
-                linewidth=0.7
+                linewidth=0.5
             )
             for i in range(len(df_count_grupo1)):
                 ax.annotate(df_count_grupo1['Casos'][i], (df_count_grupo1['Bairro'][i], df_count_grupo1['Doenca'][i]), color='black', weight='bold', fontsize=9, ha='center', va='center')
             ax.set_xlabel("Bairro")
             ax.set_ylabel("Doença")
-            ax.set_title(f"Incidência de Doenças por Bairros - Grupo 1")
+            ax.set_title(f"Doenças por Bairros - Grupo 1")
             plt.xticks(rotation=45)
             plt.grid(True, linestyle='--', alpha=0.7)
             st.pyplot(fig)
 
         # Layout para o Grupo 2
         with st.container():
-            st.markdown(f"<h2 style='text-align: center;'>Doenças por Bairros - {period_label}</h2>", unsafe_allow_html=True)
-
             # Contagem de casos por bairro e doença para o Grupo 2
             df_count_grupo2 = df_grupo2.groupby(['Bairro', 'Doenca']).size().reset_index(name='Casos')
 
@@ -203,13 +205,13 @@ def analise_incidencia_bairros(app):
                 s=df_count_grupo2['Casos'] * 150,  # Ajuste o tamanho das bolhas conforme necessário
                 alpha=0.6,
                 edgecolors="w",
-                linewidth=0.7
+                linewidth=0.5
             )
             for i in range(len(df_count_grupo2)):
                 ax.annotate(df_count_grupo2['Casos'][i], (df_count_grupo2['Bairro'][i], df_count_grupo2['Doenca'][i]), color='black', weight='bold', fontsize=9, ha='center', va='center')
             ax.set_xlabel("Bairro")
             ax.set_ylabel("Doença")
-            ax.set_title(f"Incidência de Doenças por Bairros - Grupo 2")
+            ax.set_title(f"Doenças por Bairros - Grupo 2")
             plt.xticks(rotation=45)
             plt.grid(True, linestyle='--', alpha=0.7)
             st.pyplot(fig)

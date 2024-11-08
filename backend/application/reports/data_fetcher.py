@@ -90,7 +90,13 @@ def fetch_data_bairros(session, period, ano, mes, trimestre, doencas, bairro):
         query = query.filter(Bairro.nome == bairro)
 
     # Executa a consulta e converte o resultado em DataFrame
-    return execute_query_to_df(query, session)
+    bairro = query.all()
+    df = pd.DataFrame([(b.Bairro, b.Doenca) for b in bairro], columns=["Bairro", "Doenca"])
+
+    # Log para verificar o DataFrame resultante
+    print(f"DataFrame resultante: {df.head()}")
+
+    return df
 
 def fetch_data_atendimentos(session, period, ano, mes, trimestre, medico):
     """Consulta dados de atendimentos com filtros de período e médico."""

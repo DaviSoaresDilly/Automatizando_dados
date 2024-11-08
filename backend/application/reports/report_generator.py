@@ -8,18 +8,9 @@ import os
 
 # Classe para gerar o PDF
 class PDF(FPDF):
-    def __init__(self, period_label):
-        super().__init__()
-        self.period_label = period_label
-
     def header(self):
         self.set_font('Arial', 'B', 12)
-        self.cell(0, 10, f'Relatório de Análise de Dados de Saúde {self.period_label}', 0, 1, 'C')
-
-    def footer(self):
-        self.set_y(-15)
-        self.set_font('Arial', 'I', 8)
-        self.cell(0, 10, f'Página {self.page_no()}', 0, 0, 'C')
+        self.cell(0, 10, 'Relatório de Análise de Dados de Saúde', 0, 1, 'C')
 
     def chapter_title(self, title):
         self.set_font('Arial', 'B', 12)
@@ -36,7 +27,7 @@ class PDF(FPDF):
 
 # Função para gerar o relatório
 def generate_report(df, analysis_summary, output_path_pdf, output_path_csv, period_label):
-    pdf = PDF(period_label)
+    pdf = PDF()
     pdf.add_page()
 
     # Adicionar Introdução
@@ -64,24 +55,25 @@ def generate_report(df, analysis_summary, output_path_pdf, output_path_csv, peri
     pdf.chapter_body(analysis_summary)
 
     # Adicionar gráfico de heatmap
-    pdf.add_page()
-    pdf.chapter_title('Gráfico de Distribuição')
-    fig, ax = plt.subplots(figsize=(10, 6))
-    df_pivot = pd.pivot_table(
-        df,
-        values="Doenca",
-        index="Faixa Etária",
-        columns="Sexo",
-        aggfunc="count",
-        fill_value=0,
-        observed=False
-    )
-    sns.heatmap(df_pivot, annot=True, fmt="d", cmap="coolwarm", cbar=True, ax=ax)
-    ax.set_title('Distribuição de Doenças por Faixa Etária e Gênero')
-    image_path = 'heatmap.png'
-    plt.savefig(image_path)
-    pdf.add_image(image_path, 10, 50, 190, 100)
-    os.remove(image_path)
+    if 'Doenca' in df.columns:
+        pdf.add_page()
+        pdf.chapter_title('Gráfico de Distribuição')
+        fig, ax = plt.subplots(figsize=(10, 6))
+        df_pivot = pd.pivot_table(
+            df,
+            values="Doenca",
+            index="Faixa Etária",
+            columns="Sexo",
+            aggfunc="count",
+            fill_value=0,
+            observed=False
+        )
+        sns.heatmap(df_pivot, annot=True, fmt="d", cmap="coolwarm", cbar=True, ax=ax)
+        ax.set_title('Distribuição de Doenças por Faixa Etária e Gênero')
+        image_path = 'heatmap.png'
+        plt.savefig(image_path)
+        pdf.add_image(image_path, 10, 50, 190, 100)
+        os.remove(image_path)
 
     # Adicionar Discussão
     pdf.add_page()
