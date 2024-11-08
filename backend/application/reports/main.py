@@ -10,7 +10,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")
 from application.database import create_app, get_session
 from descriptive_analysis import analise_distribuicao_doenca, analise_incidencia_bairros
 from predictive_analysis import analise_preditiva
-from statistical_analysis import analise_estatistica
+from statistical_analysis import analise_estatistica_atendimentos_medicos
 
 # Inicializa o app Flask
 app = create_app()
@@ -30,4 +30,4 @@ if choice == "Descritiva":
 elif choice == "Preditiva":
     analise_preditiva()
 elif choice == "Estatística":
-    analise_estatistica()
+    analise_estatistica_atendimentos_medicos(app)

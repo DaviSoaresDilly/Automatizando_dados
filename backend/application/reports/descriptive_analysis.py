@@ -164,7 +164,7 @@ def analise_incidencia_bairros(app):
 
         # Layout para o Grupo 1
         with st.container():
-            st.markdown(f"<h2 style='text-align: center;'>Doenças por Bairros - Grupo 1 - {period_label}</h2>", unsafe_allow_html=True)
+            st.markdown(f"<h2 style='text-align: center;'>Doenças por Bairros - {period_label}</h2>", unsafe_allow_html=True)
 
             # Contagem de casos por bairro e doença para o Grupo 1
             df_count_grupo1 = df_grupo1.groupby(['Bairro', 'Doenca']).size().reset_index(name='Casos')
@@ -179,16 +179,18 @@ def analise_incidencia_bairros(app):
                 edgecolors="w",
                 linewidth=0.7
             )
+            for i in range(len(df_count_grupo1)):
+                ax.annotate(df_count_grupo1['Casos'][i], (df_count_grupo1['Bairro'][i], df_count_grupo1['Doenca'][i]), color='black', weight='bold', fontsize=9, ha='center', va='center')
             ax.set_xlabel("Bairro")
             ax.set_ylabel("Doença")
-            ax.set_title(f"Incidência de Doenças por Bairros - Grupo 1 - {period_label}")
+            ax.set_title(f"Incidência de Doenças por Bairros - Grupo 1")
             plt.xticks(rotation=45)
             plt.grid(True, linestyle='--', alpha=0.7)
             st.pyplot(fig)
 
         # Layout para o Grupo 2
         with st.container():
-            st.markdown(f"<h2 style='text-align: center;'>Doenças por Bairros - Grupo 2 - {period_label}</h2>", unsafe_allow_html=True)
+            st.markdown(f"<h2 style='text-align: center;'>Doenças por Bairros - {period_label}</h2>", unsafe_allow_html=True)
 
             # Contagem de casos por bairro e doença para o Grupo 2
             df_count_grupo2 = df_grupo2.groupby(['Bairro', 'Doenca']).size().reset_index(name='Casos')
@@ -203,9 +205,11 @@ def analise_incidencia_bairros(app):
                 edgecolors="w",
                 linewidth=0.7
             )
+            for i in range(len(df_count_grupo2)):
+                ax.annotate(df_count_grupo2['Casos'][i], (df_count_grupo2['Bairro'][i], df_count_grupo2['Doenca'][i]), color='black', weight='bold', fontsize=9, ha='center', va='center')
             ax.set_xlabel("Bairro")
             ax.set_ylabel("Doença")
-            ax.set_title(f"Incidência de Doenças por Bairros - Grupo 2 - {period_label}")
+            ax.set_title(f"Incidência de Doenças por Bairros - Grupo 2")
             plt.xticks(rotation=45)
             plt.grid(True, linestyle='--', alpha=0.7)
             st.pyplot(fig)

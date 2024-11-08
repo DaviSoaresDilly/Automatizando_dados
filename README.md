@@ -60,10 +60,13 @@ A organização do projeto está estruturada da seguinte forma:
 │   │   ├── 📂 base_de_dados/
 │   │   │   └── update_data.py                # Atualização e manipulação de dados
 │   │   ├── 📂 reports/
-│   │   │   ├── analyze_occupacao_arima.py    # Previsão de ocupação com ARIMA
-│   │   │   ├── dashboard.py                  # Dashboard interativo (Streamlit)
-│   │   │   ├── generate_reports.py           # Geração de relatórios automáticos
-│   │   │   └── visualize.py                  # Visualização de dados
+│   │   │   ├── data_fetcher.py               # Busca de dados para relatórios
+│   │   │   ├── date_utils.py                 # Utilitários para manipulação de datas
+│   │   │   ├── descriptive_analysis.py       # Análise descritiva de dados
+│   │   │   ├── main.py                       # Configuração principal dos relatórios
+│   │   │   ├── predictive_analysis.py        # Análise preditiva de ocupação
+│   │   │   ├── report_generator.py           # Geração de relatórios automáticos
+│   │   │   └── statistical_analysis.py       # Análise estatística dos dados
 │   │   ├── generate_atendimentos.py          # Geração de dados de atendimentos
 │   │   ├── database.py                       # Configuração do banco de dados
 │   │   ├── populate.py                       # Preenchimento inicial do banco de dados
