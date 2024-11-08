@@ -6,6 +6,7 @@ import pandas as pd
 import streamlit as st
 import matplotlib.pyplot as plt
 import seaborn as sns
+import plotly.graph_objects as go
 from application.database import get_session
 from application.models import Medico
 from data_fetcher import get_especialidades_list, fetch_data_atendimentos
@@ -88,7 +89,7 @@ def analise_estatistica_atendimentos_medicos(app):
             # Gráfico de Distribuição de Atendimentos por Médico
             st.markdown(f"<h3 style='text-align: center;'>Distribuição de Atendimentos por Médico - {period_label}</h3>", unsafe_allow_html=True)
             fig, ax = plt.subplots(figsize=(10, 6))
-            sns.countplot(x="Medico", data=df, ax=ax, palette="Set2")
+            sns.countplot(x="Medico", data=df, ax=ax, hue="Medico", palette="Set2", legend=False)
             ax.set_xlabel("Médico", fontsize=12)
             ax.set_ylabel("Número de Atendimentos", fontsize=12)
             ax.set_title("Distribuição de Atendimentos por Médico", fontsize=16)
@@ -100,13 +101,13 @@ def analise_estatistica_atendimentos_medicos(app):
             st.pyplot(fig)
 
         with st.container():
-            # Margem para o próximo gráfico
-            st.markdown("<br><br>", unsafe_allow_html=True)
+            st.markdown("<br><br><br>", unsafe_allow_html=True)
 
-            # Gráfico de Distribuição de Atendimentos por Gênero
+            # Gráfico de Barras Empilhadas para Distribuição de Atendimentos por Gênero
             st.markdown(f"<h3 style='text-align: center;'>Distribuição de Atendimentos por Gênero - {period_label}</h3>", unsafe_allow_html=True)
             fig, ax = plt.subplots(figsize=(10, 6))
-            sns.countplot(x="Sexo", data=df, ax=ax, palette="Pastel1")
+            df_gender = df.groupby(['Sexo']).size().reset_index(name='Atendimentos')
+            sns.barplot(x='Sexo', y='Atendimentos', data=df_gender, ax=ax, palette=['pink', 'blue'])
             ax.set_xlabel("Gênero", fontsize=12)
             ax.set_ylabel("Número de Atendimentos", fontsize=12)
             ax.set_title("Distribuição de Atendimentos por Gênero", fontsize=16)
