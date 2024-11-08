@@ -107,7 +107,7 @@ def analise_estatistica_atendimentos_medicos(app):
             st.markdown(f"<h3 style='text-align: center;'>Distribuição de Atendimentos por Gênero - {period_label}</h3>", unsafe_allow_html=True)
             fig, ax = plt.subplots(figsize=(10, 6))
             df_gender = df.groupby(['Sexo']).size().reset_index(name='Atendimentos')
-            sns.barplot(x='Sexo', y='Atendimentos', data=df_gender, ax=ax, palette=['pink', 'blue'])
+            sns.barplot(x='Sexo', y='Atendimentos', data=df_gender, ax=ax, palette=['pink', 'blue'], legend=False)
             ax.set_xlabel("Gênero", fontsize=12)
             ax.set_ylabel("Número de Atendimentos", fontsize=12)
             ax.set_title("Distribuição de Atendimentos por Gênero", fontsize=16)
