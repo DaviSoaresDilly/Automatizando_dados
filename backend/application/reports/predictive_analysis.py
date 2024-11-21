@@ -148,42 +148,57 @@ def analise_clusterizacao_pacientes(app):
         st.markdown("### Visualização dos Clusters")
 
         # Gráfico K-means com grade e espaçamento otimizado
-        fig_kmeans = plt.figure(figsize=(10, 8))  # Aumenta o tamanho do gráfico
+        fig_kmeans = plt.figure(figsize=(12, 8))  # Aumenta o tamanho do gráfico
         sns.scatterplot(
-            x="PCA1", y="PCA2", hue="Cluster_KMeans", data=df, palette="Set2", s=100
+            x="PCA1", y="PCA2", hue="Cluster_KMeans", data=df, palette="Set2", s=120, edgecolor="w"
         )
-        plt.title("Clusters Identificados pelo K-means", fontsize=18, pad=20)  # Título espaçado
-        plt.xlabel("Componente Principal 1 (Reduzido por PCA)", fontsize=14, labelpad=15)  # Eixo X com espaçamento
-        plt.ylabel("Componente Principal 2 (Reduzido por PCA)", fontsize=14, labelpad=15)  # Eixo Y com espaçamento
-        plt.legend(title="Grupos Identificados", loc="best", fontsize=12, title_fontsize=14)  # Legenda melhorada
+        plt.title(
+            "Clusters Identificados pelo K-means", fontsize=20, pad=30
+        )  # Título com espaçamento aumentado
+        plt.xlabel(
+            "Componente Principal 1 (Reduzido por PCA)", fontsize=16, labelpad=20
+        )  # Eixo X com espaçamento
+        plt.ylabel(
+            "Componente Principal 2 (Reduzido por PCA)", fontsize=16, labelpad=20
+        )  # Eixo Y com espaçamento
+        plt.legend(
+            title="Grupos Identificados", loc="upper right", fontsize=12, title_fontsize=14
+        )  # Legenda ajustada
         plt.grid(True, linestyle="--", alpha=0.6)  # Adiciona grade com linhas tracejadas e semitransparência
-        plt.subplots_adjust(bottom=0.2, top=0.85)  # Ajusta espaço para título e anotação
-        st.markdown("<br><br><br><br>", unsafe_allow_html=True)
+        plt.subplots_adjust(bottom=0.25, top=0.85, left=0.1, right=0.9)  # Ajusta margens para melhor exibição
         plt.annotate(
             "Cada ponto representa um paciente agrupado por semelhanças com base em idade, frequência de consultas e doenças crônicas.\nOs clusters indicam diferentes perfis de pacientes.",
-            xy=(0.5, -0.1), xycoords="axes fraction", ha="center", fontsize=12,
-        )
+            xy=(0.5, -0.3), xycoords="axes fraction", ha="center", fontsize=12,
+            color="dimgray"
+        )  # Anotação com espaçamento aumentado e alinhamento centralizado
         st.pyplot(fig_kmeans)
 
         # Gráfico DBSCAN com grade e espaçamento otimizado
-        fig_dbscan = plt.figure(figsize=(10, 8))
+        fig_dbscan = plt.figure(figsize=(12, 8))
         sns.scatterplot(
-            x="PCA1", y="PCA2", hue="Cluster_DBSCAN", data=df, palette="Set1", s=100
+            x="PCA1", y="PCA2", hue="Cluster_DBSCAN", data=df, palette="Set1", s=120, edgecolor="w"
         )
-        plt.title("Clusters Identificados pelo DBSCAN", fontsize=18, pad=20)  # Título espaçado
-        plt.xlabel("Componente Principal 1 (Reduzido por PCA)", fontsize=14, labelpad=15)  # Eixo X com espaçamento
-        plt.ylabel("Componente Principal 2 (Reduzido por PCA)", fontsize=14, labelpad=15)  # Eixo Y com espaçamento
+        plt.title(
+            "Clusters Identificados pelo DBSCAN", fontsize=20, pad=30
+        )  # Título com espaçamento aumentado
+        plt.xlabel(
+            "Componente Principal 1 (Reduzido por PCA)", fontsize=16, labelpad=20
+        )  # Eixo X com espaçamento
+        plt.ylabel(
+            "Componente Principal 2 (Reduzido por PCA)", fontsize=16, labelpad=20
+        )  # Eixo Y com espaçamento
         plt.legend(
-            title="Grupos Identificados", loc="best", fontsize=12, title_fontsize=14
+            title="Grupos Identificados", loc="upper right", fontsize=12, title_fontsize=14
         )  # Legenda ajustada
         plt.grid(True, linestyle="--", alpha=0.6)  # Adiciona grade ao gráfico
-        plt.subplots_adjust(bottom=0.2, top=0.85)  # Ajusta espaço para título e anotação
-        st.markdown("<br><br><br><br>", unsafe_allow_html=True)
+        plt.subplots_adjust(bottom=0.25, top=0.85, left=0.1, right=0.9)  # Ajusta margens para melhor exibição
         plt.annotate(
             "Os pontos representam pacientes. Clusters identificados pelo algoritmo DBSCAN,\nque agrupa com base na densidade local dos dados e destaca possíveis outliers.",
-            xy=(0.5, -0.1), xycoords="axes fraction", ha="center", fontsize=12,
-        )
+            xy=(0.5, -0.3), xycoords="axes fraction", ha="center", fontsize=12,
+            color="dimgray"
+        )  # Anotação centralizada
         st.pyplot(fig_dbscan)
+
 
         # --- Resumo ---
         st.markdown("""
